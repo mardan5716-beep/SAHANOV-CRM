@@ -9,8 +9,8 @@ function toNumber(value: Money): number {
 }
 
 /**
- * Форматирует сумму в рублях: 12500 → «12 500 ₽».
- * Копейки округляются до целых рублей. Разделители тысяч (Intl использует
+ * Форматирует сумму в тенге: 12500 → «12 500 ₸».
+ * Копейки (тиыны) округляются до целых. Разделители тысяч (Intl использует
  * узкий неразрывный пробел) приводятся к обычному пробелу.
  */
 export function formatMoney(value: Money): string {
@@ -19,7 +19,7 @@ export function formatMoney(value: Money): string {
     maximumFractionDigits: 0,
   }).format(n)
   const normalized = formatted.replace(/\s/g, ' ')
-  return `${normalized} ₽`
+  return `${normalized} ₸`
 }
 
 /** Остаток к оплате = price − prepaid. Не хранится в БД, считается в коде. */

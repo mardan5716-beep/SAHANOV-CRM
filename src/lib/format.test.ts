@@ -2,17 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { formatMoney, formatDate, balance } from './format'
 
 describe('formatMoney', () => {
-  it('форматирует рубли с разделителями тысяч', () => {
-    expect(formatMoney(12500)).toBe('12 500 ₽')
+  it('форматирует тенге с разделителями тысяч', () => {
+    expect(formatMoney(12500)).toBe('12 500 ₸')
   })
   it('принимает строку (Decimal из БД)', () => {
-    expect(formatMoney('0')).toBe('0 ₽')
+    expect(formatMoney('0')).toBe('0 ₸')
   })
-  it('округляет копейки до целых рублей', () => {
-    expect(formatMoney('99999.49')).toBe('99 999 ₽')
+  it('округляет дробную часть до целых', () => {
+    expect(formatMoney('99999.49')).toBe('99 999 ₸')
   })
   it('форматирует большие суммы', () => {
-    expect(formatMoney(1234567)).toBe('1 234 567 ₽')
+    expect(formatMoney(1234567)).toBe('1 234 567 ₸')
   })
 })
 

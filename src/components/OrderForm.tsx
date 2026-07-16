@@ -111,7 +111,7 @@ export function OrderForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="price" className={labelClass}>
-            Сумма, ₽
+            Сумма, ₸
           </label>
           <input
             id="price"
@@ -125,7 +125,7 @@ export function OrderForm({
         </div>
         <div>
           <label htmlFor="prepaid" className={labelClass}>
-            Предоплата, ₽
+            Предоплата, ₸
           </label>
           <input
             id="prepaid"
