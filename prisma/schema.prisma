@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  NEW
+  MEASURE
+  PRODUCTION
+  INSTALL
+  DONE
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      Status    @default(NEW)
+  price       Decimal   @default(0) @db.Decimal(12, 2)
+  prepaid     Decimal   @default(0) @db.Decimal(12, 2)
+  measureDate DateTime?
+  dueDate     DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+}

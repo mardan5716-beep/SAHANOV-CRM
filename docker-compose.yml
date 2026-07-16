@@ -1,0 +1,18 @@
+name: crm-mebelshik
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: crm-mebelshik-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm
+      POSTGRES_DB: crm
+    ports:
+      - "5434:5432"
+    volumes:
+      - crm-db-data:/var/lib/postgresql/data
+
+volumes:
+  crm-db-data:
