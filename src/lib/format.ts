@@ -39,3 +39,18 @@ export function formatDate(date: Date | string): string {
   }).format(d)
   return formatted.replace(/\s*г\.?$/, '').trim()
 }
+
+/** Преобразует дату в значение для <input type="date"> (YYYY-MM-DD, локальное). */
+export function toDateInput(date: Date | null | undefined): string {
+  if (!date) return ''
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** Преобразует денежное значение в строку для текстового поля (0 → пусто). */
+export function moneyToInput(value: Money): string {
+  const n = toNumber(value)
+  return n === 0 ? '' : String(n)
+}
