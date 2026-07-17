@@ -62,6 +62,7 @@ export function isAwaitingPayment(order: ReminderOrder): boolean {
 export async function getToday() {
   const now = new Date()
   const orders = await prisma.order.findMany({
+    where: { deletedAt: null },
     include: { client: true },
   })
 

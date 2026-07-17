@@ -45,7 +45,11 @@ export async function updateOrder(
 }
 
 export async function deleteOrder(id: string): Promise<void> {
-  await prisma.order.delete({ where: { id } })
+  // Мягкое удаление: запись помечается скрытой, но остаётся в базе.
+  await prisma.order.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  })
   revalidatePath('/orders')
   revalidatePath('/')
   redirect('/orders')

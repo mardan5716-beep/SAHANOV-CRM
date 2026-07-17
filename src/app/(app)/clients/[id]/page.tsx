@@ -12,10 +12,11 @@ export default async function ClientPage({
 }: {
   params: { id: string }
 }) {
-  const client = await prisma.client.findUnique({
-    where: { id: params.id },
+  const client = await prisma.client.findFirst({
+    where: { id: params.id, deletedAt: null },
     include: {
       orders: {
+        where: { deletedAt: null },
         include: { client: true },
         orderBy: { createdAt: 'desc' },
       },

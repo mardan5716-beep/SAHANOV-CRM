@@ -11,7 +11,9 @@ export default async function EditClientPage({
 }: {
   params: { id: string }
 }) {
-  const client = await prisma.client.findUnique({ where: { id: params.id } })
+  const client = await prisma.client.findFirst({
+    where: { id: params.id, deletedAt: null },
+  })
   if (!client) notFound()
 
   return (

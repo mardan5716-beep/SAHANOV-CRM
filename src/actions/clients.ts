@@ -43,7 +43,12 @@ export async function updateClient(
 }
 
 export async function deleteClient(id: string): Promise<void> {
-  await prisma.client.delete({ where: { id } })
+  // Мягкое удаление клиента и его заказов: записи скрываются, но остаются в базе.
+  const deletedAt = new Date()
+  await prisma.$transaction([
+    prisma.order.updateMany({ where: { clientId: id }, data: { deletedAt } }),
+    prisma.client.update({ where: { id }, data: { deletedAt } }),
+  ])
   revalidatePath('/clients')
   revalidatePath('/')
   redirect('/clients')

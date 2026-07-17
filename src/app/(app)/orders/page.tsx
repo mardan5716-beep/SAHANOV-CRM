@@ -21,7 +21,7 @@ export default async function OrdersPage({
       ? (statusParam as Status)
       : undefined
 
-  const where: Prisma.OrderWhereInput = {}
+  const where: Prisma.OrderWhereInput = { deletedAt: null }
   if (status) where.status = status
   if (q) {
     where.OR = [

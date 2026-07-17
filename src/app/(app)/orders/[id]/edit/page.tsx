@@ -13,8 +13,9 @@ export default async function EditOrderPage({
   params: { id: string }
 }) {
   const [order, clients] = await Promise.all([
-    prisma.order.findUnique({ where: { id: params.id } }),
+    prisma.order.findFirst({ where: { id: params.id, deletedAt: null } }),
     prisma.client.findMany({
+      where: { deletedAt: null },
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),

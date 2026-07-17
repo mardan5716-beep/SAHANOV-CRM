@@ -13,8 +13,8 @@ export default async function OrderPage({
 }: {
   params: { id: string }
 }) {
-  const order = await prisma.order.findUnique({
-    where: { id: params.id },
+  const order = await prisma.order.findFirst({
+    where: { id: params.id, deletedAt: null },
     include: { client: true },
   })
   if (!order) notFound()

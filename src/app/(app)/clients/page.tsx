@@ -12,13 +12,14 @@ export default async function ClientsPage({
   searchParams: { q?: string }
 }) {
   const q = searchParams.q?.trim()
-  const where: Prisma.ClientWhereInput = q
-    ? { name: { contains: q, mode: 'insensitive' } }
-    : {}
+  const where: Prisma.ClientWhereInput = { deletedAt: null }
+  if (q) where.name = { contains: q, mode: 'insensitive' }
 
   const clients = await prisma.client.findMany({
     where,
-    include: { _count: { select: { orders: true } } },
+    include: {
+      _count: { select: { orders: { where: { deletedAt: null } } } },
+    },
     orderBy: { createdAt: 'desc' },
   })
 

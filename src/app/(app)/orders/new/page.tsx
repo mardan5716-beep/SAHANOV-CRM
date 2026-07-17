@@ -11,6 +11,7 @@ export default async function NewOrderPage({
   searchParams: { clientId?: string }
 }) {
   const clients = await prisma.client.findMany({
+    where: { deletedAt: null },
     orderBy: { name: 'asc' },
     select: { id: true, name: true },
   })

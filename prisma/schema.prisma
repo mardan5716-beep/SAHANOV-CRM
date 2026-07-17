@@ -16,14 +16,17 @@ enum Status {
 }
 
 model Client {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
   phone     String?
   address   String?
   notes     String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  deletedAt DateTime? // мягкое удаление: null — активен, дата — скрыт
 
   orders Order[]
+
+  @@index([deletedAt])
 }
 
 model Order {
@@ -40,7 +43,9 @@ model Order {
   notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // мягкое удаление: null — активен, дата — скрыт
 
   @@index([clientId])
   @@index([status])
+  @@index([deletedAt])
 }
