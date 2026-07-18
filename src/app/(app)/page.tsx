@@ -15,10 +15,10 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold">Дашборд</h1>
 
       <div className="grid grid-cols-2 gap-3">
-        <Kpi label="Активных сделок" value={String(activeCount)} />
-        <Kpi label="К оплате" value={formatMoney(totalDue)} highlight={totalDue > 0} />
-        <Kpi label="Выручка за месяц" value={formatMoney(monthRevenue)} />
-        <Kpi label="Маржа за месяц" value={formatMoney(monthMargin)} />
+        <Kpi label="Активных сделок" value={String(activeCount)} href="/orders?active=1" />
+        <Kpi label="К оплате" value={formatMoney(totalDue)} highlight={totalDue > 0} href="/orders?due=1" />
+        <Kpi label="Выручка за месяц" value={formatMoney(monthRevenue)} href="/orders?period=month" />
+        <Kpi label="Маржа за месяц" value={formatMoney(monthMargin)} href="/orders?period=month" />
       </div>
 
       <section>
@@ -83,17 +83,32 @@ function Kpi({
   label,
   value,
   highlight = false,
+  href,
 }: {
   label: string
   value: string
   highlight?: boolean
+  href?: string
 }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+  const inner = (
+    <>
       <div className={`text-2xl font-bold ${highlight ? 'text-red-600 dark:text-red-400' : ''}`}>
         {value}
       </div>
-      <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{label}</div>
-    </div>
+      <div className="mt-0.5 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+        {label}
+        {href && <span aria-hidden className="text-gray-300 dark:text-gray-600">›</span>}
+      </div>
+    </>
+  )
+  const base = 'block rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900'
+  if (!href) return <div className={base}>{inner}</div>
+  return (
+    <Link
+      href={href}
+      className={`${base} transition hover:border-gray-300 active:scale-[0.99] dark:hover:border-gray-700`}
+    >
+      {inner}
+    </Link>
   )
 }
