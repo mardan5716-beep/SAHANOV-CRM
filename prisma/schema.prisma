@@ -7,45 +7,142 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Status {
-  NEW
-  MEASURE
-  PRODUCTION
-  INSTALL
-  DONE
+enum OrderStatus {
+  NEW // Новая заявка
+  INVOICED // Счёт выставлен
+  PAID // Оплачено
+  PICKING // Комплектуется
+  PACKED // Упаковано
+  SHIPPED // Отправлено
+  DELIVERED // Получено
+  COMPLETED // Завершено
+  RETURN // Возврат
+  CANCELLED // Отменено
 }
 
-model Client {
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  KASPI
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum DeliveryMethod {
+  PICKUP
+  DELIVERY
+}
+
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
+enum Category {
+  SHELVES
+  CONSOLES
+  SIDE_TABLES
+  PLANT_STANDS
+  ETAGERES
+  ORGANIZERS
+  MIRRORS
+  BATHROOM
+  KITCHEN
+  OTHER
+}
+
+model Manager {
   id        String    @id @default(cuid())
   name      String
-  phone     String?
-  address   String?
-  notes     String?
+  active    Boolean   @default(true)
   createdAt DateTime  @default(now())
-  deletedAt DateTime? // мягкое удаление: null — активен, дата — скрыт
+  deletedAt DateTime?
 
   orders Order[]
 
   @@index([deletedAt])
 }
 
-model Order {
-  id          String    @id @default(cuid())
-  clientId    String
-  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  status      Status    @default(NEW)
-  price       Decimal   @default(0) @db.Decimal(12, 2)
-  prepaid     Decimal   @default(0) @db.Decimal(12, 2)
-  measureDate DateTime?
-  dueDate     DateTime?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime? // мягкое удаление: null — активен, дата — скрыт
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  company   String?
+  source    String?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
-  @@index([clientId])
-  @@index([status])
+  orders Order[]
+
   @@index([deletedAt])
+}
+
+model Product {
+  id        String    @id @default(cuid())
+  sku       String    @unique
+  name      String
+  category  Category  @default(OTHER)
+  price     Decimal   @default(0) @db.Decimal(12, 2)
+  cost      Decimal   @default(0) @db.Decimal(12, 2)
+  stock     Int       @default(0)
+  minStock  Int       @default(0)
+  location  String?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  items OrderItem[]
+
+  @@index([category])
+  @@index([deletedAt])
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  number          String         @unique
+  clientId        String
+  client          Client         @relation(fields: [clientId], references: [id])
+  managerId       String?
+  manager         Manager?       @relation(fields: [managerId], references: [id])
+  status          OrderStatus    @default(NEW)
+  paymentStatus   PaymentStatus  @default(UNPAID)
+  paymentMethod   PaymentMethod?
+  paid            Decimal        @default(0) @db.Decimal(12, 2)
+  deliveryMethod  DeliveryMethod @default(PICKUP)
+  deliveryAddress String?
+  trackNumber     String?
+  notes           String?
+  stockDeductedAt DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  items OrderItem[]
+
+  @@index([status])
+  @@index([clientId])
+  @@index([deletedAt])
+}
+
+model OrderItem {
+  id            String       @id @default(cuid())
+  orderId       String
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product?     @relation(fields: [productId], references: [id])
+  sku           String
+  name          String
+  unitPrice     Decimal      @db.Decimal(12, 2)
+  unitCost      Decimal      @default(0) @db.Decimal(12, 2)
+  qty           Int          @default(1)
+  discountType  DiscountType @default(PERCENT)
+  discountValue Decimal      @default(0) @db.Decimal(12, 2)
+
+  @@index([orderId])
 }
