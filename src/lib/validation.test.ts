@@ -1,84 +1,101 @@
 import { describe, it, expect } from 'vitest'
-import { clientSchema, orderSchema } from './validation'
+import {
+  clientSchema,
+  productSchema,
+  managerSchema,
+  orderSchema,
+} from './validation'
 
 describe('clientSchema', () => {
   it('пустое имя → ошибка', () => {
     expect(clientSchema.safeParse({ name: '   ' }).success).toBe(false)
   })
-
-  it('валидное имя, пустые поля превращаются в null', () => {
-    const r = clientSchema.safeParse({
-      name: '  Иван  ',
-      phone: '',
-      address: '',
-      notes: '',
-    })
+  it('компания и источник опциональны', () => {
+    const r = clientSchema.safeParse({ name: 'Айгуль', phone: '', company: '', source: '' })
     expect(r.success).toBe(true)
     if (r.success) {
-      expect(r.data.name).toBe('Иван')
-      expect(r.data.phone).toBeNull()
-      expect(r.data.address).toBeNull()
-      expect(r.data.notes).toBeNull()
+      expect(r.data.company).toBeNull()
+      expect(r.data.source).toBeNull()
     }
   })
 })
 
+describe('productSchema', () => {
+  const base = {
+    sku: 'GS-SHELF-01',
+    name: 'Полка настенная',
+    category: 'SHELVES',
+    price: '12 500',
+    cost: '7000',
+    stock: '10',
+    minStock: '3',
+    location: 'A1',
+  }
+  it('пустой артикул → ошибка', () => {
+    expect(productSchema.safeParse({ ...base, sku: '' }).success).toBe(false)
+  })
+  it('цена из строки с пробелами → число', () => {
+    const r = productSchema.safeParse(base)
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.price).toBe(12500)
+      expect(r.data.stock).toBe(10)
+    }
+  })
+  it('отрицательный остаток → ошибка', () => {
+    expect(productSchema.safeParse({ ...base, stock: '-1' }).success).toBe(false)
+  })
+})
+
+describe('managerSchema', () => {
+  it('пустое имя → ошибка', () => {
+    expect(managerSchema.safeParse({ name: '' }).success).toBe(false)
+  })
+  it('валидное имя → ок', () => {
+    expect(managerSchema.safeParse({ name: 'Данияр' }).success).toBe(true)
+  })
+})
+
 describe('orderSchema', () => {
+  const validItem = {
+    sku: 'GS-SHELF-01',
+    name: 'Полка',
+    unitPrice: '12500',
+    unitCost: '7000',
+    qty: 2,
+    discountType: 'PERCENT',
+    discountValue: 0,
+  }
   const base = {
     clientId: 'c1',
-    title: 'Перила',
+    managerId: '',
     status: 'NEW',
-    price: '',
-    prepaid: '',
-    measureDate: '',
-    dueDate: '',
-    description: '',
-    notes: '',
+    paymentStatus: 'UNPAID',
+    paymentMethod: '',
+    paid: '',
+    deliveryMethod: 'PICKUP',
+    items: [validItem],
   }
 
-  it('пустой title → ошибка', () => {
-    expect(orderSchema.safeParse({ ...base, title: '' }).success).toBe(false)
+  it('без позиций → ошибка', () => {
+    expect(orderSchema.safeParse({ ...base, items: [] }).success).toBe(false)
   })
-
+  it('с валидной позицией → успех', () => {
+    const r = orderSchema.safeParse(base)
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.items).toHaveLength(1)
+      expect(r.data.items[0].qty).toBe(2)
+      expect(r.data.paid).toBe(0)
+      expect(r.data.managerId).toBeNull()
+    }
+  })
+  it('количество меньше 1 → ошибка', () => {
+    expect(
+      orderSchema.safeParse({ ...base, items: [{ ...validItem, qty: 0 }] }).success,
+    ).toBe(false)
+  })
   it('clientId обязателен', () => {
     expect(orderSchema.safeParse({ ...base, clientId: '' }).success).toBe(false)
-  })
-
-  it('price из строки с пробелами парсится в число', () => {
-    const r = orderSchema.safeParse({ ...base, price: '12 500' })
-    expect(r.success).toBe(true)
-    if (r.success) expect(r.data.price).toBe(12500)
-  })
-
-  it('пустые price/prepaid → 0', () => {
-    const r = orderSchema.safeParse(base)
-    expect(r.success).toBe(true)
-    if (r.success) {
-      expect(r.data.price).toBe(0)
-      expect(r.data.prepaid).toBe(0)
-    }
-  })
-
-  it('отрицательная цена → ошибка', () => {
-    expect(orderSchema.safeParse({ ...base, price: '-5' }).success).toBe(false)
-  })
-
-  it('пустые даты → null', () => {
-    const r = orderSchema.safeParse(base)
-    expect(r.success).toBe(true)
-    if (r.success) {
-      expect(r.data.measureDate).toBeNull()
-      expect(r.data.dueDate).toBeNull()
-    }
-  })
-
-  it('валидная дата парсится в Date', () => {
-    const r = orderSchema.safeParse({ ...base, measureDate: '2026-07-15' })
-    expect(r.success).toBe(true)
-    if (r.success) expect(r.data.measureDate instanceof Date).toBe(true)
-  })
-
-  it('невалидная дата → ошибка', () => {
-    expect(orderSchema.safeParse({ ...base, dueDate: 'не дата' }).success).toBe(false)
   })
 })
