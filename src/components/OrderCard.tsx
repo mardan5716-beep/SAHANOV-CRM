@@ -2,12 +2,12 @@ import Link from 'next/link'
 import type { Order, Client, OrderItem } from '@prisma/client'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { formatMoney, formatDate } from '@/lib/format'
-import { orderTotal, orderBalance } from '@/lib/order-calc'
+import { grandTotal, orderBalance } from '@/lib/order-calc'
 
 type OrderWithRels = Order & { client: Client; items: OrderItem[] }
 
 export function OrderCard({ order }: { order: OrderWithRels }) {
-  const total = orderTotal(order.items)
+  const total = grandTotal(order.items, order.deliveryCost)
   const balance = orderBalance(total, order.paid)
 
   return (

@@ -130,6 +130,7 @@ async function main() {
     paidRatio: number // доля от суммы
     delivery: DeliveryMethod
     deliveryAddress?: string
+    deliveryCost?: number
     trackNumber?: string
     shipped?: boolean // остатки списаны
     createdAt: Date
@@ -158,6 +159,7 @@ async function main() {
       paidRatio: 0.5,
       delivery: DeliveryMethod.DELIVERY,
       deliveryAddress: 'г. Алматы, ул. Абая 15, офис 4',
+      deliveryCost: 2500,
       createdAt: daysAgo(1),
       items: [item('GS-CONS-01', 1), item('GS-MIRR-01', 2, 10)],
     },
@@ -183,6 +185,7 @@ async function main() {
       paidRatio: 1,
       delivery: DeliveryMethod.DELIVERY,
       deliveryAddress: 'г. Астана, пр. Мангилик Ел 20',
+      deliveryCost: 0, // бесплатная доставка
       trackNumber: 'KZ123456789',
       shipped: true,
       createdAt: daysAgo(4),
@@ -211,13 +214,14 @@ async function main() {
       paidRatio: 0,
       delivery: DeliveryMethod.DELIVERY,
       deliveryAddress: 'г. Алматы, мкр. Самал-2, 33',
+      deliveryCost: 1500,
       createdAt: daysAgo(15),
       items: [item('GS-SHELF-02', 1)],
     },
   ]
 
   for (const o of orders) {
-    const total = totalSum(o.items)
+    const total = totalSum(o.items) + (o.deliveryCost ?? 0)
     await prisma.order.create({
       data: {
         number: orderNumber(o.n),
@@ -229,6 +233,7 @@ async function main() {
         paid: Math.round(total * o.paidRatio),
         deliveryMethod: o.delivery,
         deliveryAddress: o.deliveryAddress,
+        deliveryCost: o.deliveryCost ?? 0,
         trackNumber: o.trackNumber,
         stockDeductedAt: o.shipped ? o.createdAt : null,
         createdAt: o.createdAt,

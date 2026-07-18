@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   lineTotal,
   orderTotal,
+  grandTotal,
   orderCost,
   orderBalance,
   margin,
@@ -47,6 +48,8 @@ describe('итоги заказа', () => {
     item({ qty: 1, unitPrice: 3000, unitCost: 2000 }),
   ]
   it('orderTotal', () => expect(orderTotal(items)).toBe(5000))
+  it('grandTotal с доставкой', () => expect(grandTotal(items, 1500)).toBe(6500))
+  it('grandTotal без доставки', () => expect(grandTotal(items)).toBe(5000))
   it('orderCost', () => expect(orderCost(items)).toBe(3200))
   it('orderBalance', () => expect(orderBalance(5000, 2000)).toBe(3000))
   it('margin', () => expect(margin(5000, 3200)).toBe(1800))

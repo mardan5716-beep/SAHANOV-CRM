@@ -25,9 +25,14 @@ export function lineTotal(item: CalcItem): number {
   return Math.max(0, subtotal - discount)
 }
 
-/** Сумма заказа = сумма всех позиций. */
+/** Сумма позиций заказа. */
 export function orderTotal(items: CalcItem[]): number {
   return items.reduce((sum, i) => sum + lineTotal(i), 0)
+}
+
+/** Итог к оплате = сумма позиций + стоимость доставки. */
+export function grandTotal(items: CalcItem[], deliveryCost: Num = 0): number {
+  return orderTotal(items) + n(deliveryCost)
 }
 
 /** Себестоимость заказа = сумма (unitCost × qty). */

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFormState } from 'react-dom'
 import {
   OrderStatus,
@@ -53,6 +53,7 @@ export type OrderDefaults = {
   paid?: number
   deliveryMethod?: DeliveryMethod
   deliveryAddress?: string | null
+  deliveryCost?: number
   trackNumber?: string | null
   notes?: string | null
   items?: Omit<Item, 'key'>[]
@@ -87,16 +88,31 @@ export function OrderForm({
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(
     defaults.deliveryMethod ?? DeliveryMethod.PICKUP,
   )
+  const [deliveryCost, setDeliveryCost] = useState<string>(
+    defaults.deliveryCost ? String(defaults.deliveryCost) : '',
+  )
   const [items, setItems] = useState<Item[]>(
     (defaults.items ?? []).map((i) => ({ ...i, key: newKey() })),
   )
-
-  const total = orderTotal(items)
-  const cost = orderCost(items)
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(
+    defaults.paymentStatus ?? PaymentStatus.UNPAID,
+  )
   const [paid, setPaid] = useState<string>(
     defaults.paid ? String(defaults.paid) : '',
   )
+
+  const itemsTotal = orderTotal(items)
+  const cost = orderCost(items)
+  const delivery = deliveryMethod === DeliveryMethod.DELIVERY ? Number(deliveryCost) || 0 : 0
+  const total = itemsTotal + delivery
   const balance = orderBalance(total, Number(paid) || 0)
+
+  // При статусе оплаты «Оплачено» поле «Оплачено» = сумме сделки.
+  useEffect(() => {
+    if (paymentStatus === PaymentStatus.PAID) {
+      setPaid(String(Math.round(total)))
+    }
+  }, [paymentStatus, total])
 
   function addItem() {
     setItems((prev) => [
@@ -296,7 +312,12 @@ export function OrderForm({
       <section className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Статус оплаты</label>
-          <select name="paymentStatus" defaultValue={defaults.paymentStatus ?? PaymentStatus.UNPAID} className={inputClass}>
+          <select
+            name="paymentStatus"
+            value={paymentStatus}
+            onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
+            className={inputClass}
+          >
             {PAYMENT_STATUS_ORDER.map((s) => (
               <option key={s} value={s}>
                 {paymentStatusLabel(s)}
@@ -360,6 +381,16 @@ export function OrderForm({
               placeholder="Адрес доставки"
               className={inputClass}
             />
+            <div>
+              <label className={labelClass}>Стоимость доставки, ₸ (0 — бесплатно)</label>
+              <input
+                inputMode="numeric"
+                value={deliveryCost}
+                onChange={(e) => setDeliveryCost(e.target.value)}
+                placeholder="0"
+                className={inputClass}
+              />
+            </div>
             <input
               name="trackNumber"
               defaultValue={defaults.trackNumber ?? ''}
@@ -368,6 +399,11 @@ export function OrderForm({
             />
           </div>
         )}
+        <input
+          type="hidden"
+          name="deliveryCost"
+          value={deliveryMethod === DeliveryMethod.DELIVERY ? String(Number(deliveryCost) || 0) : '0'}
+        />
       </section>
 
       <div>
@@ -377,12 +413,14 @@ export function OrderForm({
 
       {/* Итоги */}
       <section className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
-        <Row label="Сумма" value={formatMoney(total)} strong />
+        <Row label="Товары" value={formatMoney(itemsTotal)} />
+        {delivery > 0 && <Row label="Доставка" value={formatMoney(delivery)} />}
+        <Row label="Сумма к оплате" value={formatMoney(total)} strong />
         <Row label="Оплачено" value={formatMoney(Number(paid) || 0)} />
         <Row label="Остаток" value={formatMoney(balance)} highlight={balance > 0} />
         <Row
-          label="Маржа"
-          value={`${formatMoney(margin(total, cost))} (${marginPercent(total, cost)}%)`}
+          label="Маржа по товарам"
+          value={`${formatMoney(margin(itemsTotal, cost))} (${marginPercent(itemsTotal, cost)}%)`}
         />
       </section>
 

@@ -116,6 +116,7 @@ model Order {
   paid            Decimal        @default(0) @db.Decimal(12, 2)
   deliveryMethod  DeliveryMethod @default(PICKUP)
   deliveryAddress String?
+  deliveryCost    Decimal        @default(0) @db.Decimal(12, 2)
   trackNumber     String?
   notes           String?
   stockDeductedAt DateTime?

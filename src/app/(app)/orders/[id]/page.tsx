@@ -25,8 +25,10 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
   })
   if (!order) notFound()
 
-  const total = orderTotal(order.items)
+  const itemsTotal = orderTotal(order.items)
   const cost = orderCost(order.items)
+  const delivery = Number(order.deliveryCost)
+  const total = itemsTotal + delivery
   const balance = orderBalance(total, order.paid)
 
   return (
@@ -87,14 +89,16 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
 
       {/* Итоги */}
       <section className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
-        <SumRow label="Сумма" value={formatMoney(total)} strong />
+        <SumRow label="Товары" value={formatMoney(itemsTotal)} />
+        <SumRow label="Доставка" value={delivery > 0 ? formatMoney(delivery) : 'бесплатно'} />
+        <SumRow label="Сумма к оплате" value={formatMoney(total)} strong />
         <SumRow label="Оплачено" value={formatMoney(order.paid)} />
         <SumRow label="Остаток" value={formatMoney(balance)} highlight={balance > 0} />
         <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
         <SumRow label="Себестоимость" value={formatMoney(cost)} muted />
         <SumRow
-          label="Маржа"
-          value={`${formatMoney(margin(total, cost))} · ${marginPercent(total, cost)}%`}
+          label="Маржа по товарам"
+          value={`${formatMoney(margin(itemsTotal, cost))} · ${marginPercent(itemsTotal, cost)}%`}
         />
       </section>
 
@@ -104,6 +108,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         <InfoCard label="Получение" value={deliveryMethodLabel(order.deliveryMethod)} />
         {order.deliveryMethod === 'DELIVERY' && (
           <>
+            <InfoCard label="Стоимость доставки" value={delivery > 0 ? formatMoney(delivery) : 'бесплатно'} />
             <InfoCard label="Адрес" value={order.deliveryAddress || '—'} />
             <InfoCard label="Трек-номер" value={order.trackNumber || '—'} />
           </>

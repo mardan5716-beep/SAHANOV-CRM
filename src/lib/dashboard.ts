@@ -50,8 +50,9 @@ export async function getDashboard() {
 
   for (const o of orders) {
     const items = toCalc(o.items)
-    const total = orderTotal(items)
+    const itemsTotal = orderTotal(items)
     const cost = orderCost(items)
+    const total = itemsTotal + Number(o.deliveryCost)
     const balance = orderBalance(total, Number(o.paid))
 
     if (!INACTIVE.includes(o.status)) activeCount++
@@ -62,7 +63,7 @@ export async function getDashboard() {
 
     if (o.createdAt >= monthStart && o.status !== OrderStatus.CANCELLED) {
       monthRevenue += total
-      monthMargin += margin(total, cost)
+      monthMargin += margin(itemsTotal, cost)
     }
   }
 
