@@ -52,6 +52,25 @@ export async function setManagerAdmin(id: string, isAdmin: boolean): Promise<voi
   revalidatePath('/managers')
 }
 
+/** Админ задаёт новый пароль менеджеру (без знания текущего). */
+export async function resetManagerPassword(
+  id: string,
+  _prevState: ManagerFormState,
+  formData: FormData,
+): Promise<ManagerFormState & { success?: boolean }> {
+  await requireAdmin()
+  const newPassword = String(formData.get('newPassword') ?? '')
+  if (newPassword.length < 6) {
+    return { fieldErrors: { newPassword: ['Минимум 6 символов'] } }
+  }
+  await prisma.manager.update({
+    where: { id },
+    data: { passwordHash: await hashPassword(newPassword) },
+  })
+  revalidatePath('/managers')
+  return { success: true }
+}
+
 export async function deleteManager(id: string): Promise<void> {
   const admin = await requireAdmin()
   if (admin.id === id) {

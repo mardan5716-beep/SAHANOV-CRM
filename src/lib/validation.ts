@@ -169,6 +169,27 @@ export function parseManager(formData: FormData) {
   })
 }
 
+// ─── Смена пароля ───────────────────────────────────────────────────────────
+
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.preprocess((v) => String(v ?? ''), z.string().min(1, 'Введите текущий пароль')),
+    newPassword: z.preprocess((v) => String(v ?? ''), z.string().min(6, 'Минимум 6 символов')),
+    confirm: z.preprocess((v) => String(v ?? ''), z.string()),
+  })
+  .refine((d) => d.newPassword === d.confirm, {
+    message: 'Пароли не совпадают',
+    path: ['confirm'],
+  })
+
+export function parsePasswordChange(formData: FormData) {
+  return passwordChangeSchema.safeParse({
+    currentPassword: formData.get('currentPassword'),
+    newPassword: formData.get('newPassword'),
+    confirm: formData.get('confirm'),
+  })
+}
+
 export function parseOrder(formData: FormData) {
   let items: unknown = []
   try {

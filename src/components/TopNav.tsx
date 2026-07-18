@@ -55,9 +55,12 @@ export function TopNav({
               Менеджеры
             </Link>
           )}
-          <span className="ml-2 hidden text-sm text-gray-500 lg:inline dark:text-gray-400">
+          <Link
+            href="/account"
+            className="ml-2 hidden rounded-lg px-2 py-2 text-sm text-gray-500 hover:bg-gray-100 lg:inline dark:text-gray-400 dark:hover:bg-gray-800"
+          >
             {managerName}
-          </span>
+          </Link>
           <form action={logout}>
             <button
               type="submit"

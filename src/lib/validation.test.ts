@@ -4,6 +4,7 @@ import {
   productSchema,
   managerSchema,
   orderSchema,
+  passwordChangeSchema,
 } from './validation'
 
 describe('clientSchema', () => {
@@ -69,6 +70,24 @@ describe('managerSchema', () => {
       expect(r.data.email).toBe('admin@glint.kz')
       expect(r.data.isAdmin).toBe(true)
     }
+  })
+})
+
+describe('passwordChangeSchema', () => {
+  it('несовпадение паролей → ошибка', () => {
+    expect(
+      passwordChangeSchema.safeParse({ currentPassword: 'x', newPassword: 'abcdef', confirm: 'abcdeg' }).success,
+    ).toBe(false)
+  })
+  it('короткий новый пароль → ошибка', () => {
+    expect(
+      passwordChangeSchema.safeParse({ currentPassword: 'x', newPassword: '123', confirm: '123' }).success,
+    ).toBe(false)
+  })
+  it('валидная смена → ок', () => {
+    expect(
+      passwordChangeSchema.safeParse({ currentPassword: 'old', newPassword: 'abcdef', confirm: 'abcdef' }).success,
+    ).toBe(true)
   })
 })
 
