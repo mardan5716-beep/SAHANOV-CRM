@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { getCurrentManager } from '@/lib/session'
 import { createOrder } from '@/actions/orders'
 import { OrderForm } from '@/components/OrderForm'
 
@@ -10,14 +11,10 @@ export default async function NewOrderPage({
 }: {
   searchParams: { clientId?: string }
 }) {
-  const [clients, managers, products] = await Promise.all([
+  const manager = await getCurrentManager()
+  const [clients, products] = await Promise.all([
     prisma.client.findMany({
       where: { deletedAt: null },
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true },
-    }),
-    prisma.manager.findMany({
-      where: { deletedAt: null, active: true },
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
@@ -61,10 +58,10 @@ export default async function NewOrderPage({
         <OrderForm
           action={createOrder}
           clients={clients}
-          managers={managers}
           products={productOptions}
           defaults={{ clientId: searchParams.clientId }}
           submitLabel="Создать сделку"
+          canSeeMargin={manager?.isAdmin ?? false}
         />
       )}
     </div>

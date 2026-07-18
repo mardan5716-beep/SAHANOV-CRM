@@ -46,7 +46,6 @@ type Item = {
 
 export type OrderDefaults = {
   clientId?: string
-  managerId?: string | null
   status?: OrderStatus
   paymentStatus?: PaymentStatus
   paymentMethod?: PaymentMethod | null
@@ -66,17 +65,17 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
 export function OrderForm({
   action,
   clients,
-  managers,
   products,
   defaults = {},
   submitLabel,
+  canSeeMargin = false,
 }: {
   action: (state: OrderFormState, formData: FormData) => Promise<OrderFormState>
   clients: Named[]
-  managers: Named[]
   products: ProductOption[]
   defaults?: OrderDefaults
   submitLabel: string
+  canSeeMargin?: boolean
 }) {
   const [state, formAction] = useFormState(action, {} as OrderFormState)
   const keyRef = useRef(0)
@@ -190,18 +189,6 @@ export function OrderForm({
             <input type="hidden" name="clientId" value="" />
           </div>
         )}
-
-        <div>
-          <label className={labelClass}>Менеджер</label>
-          <select name="managerId" defaultValue={defaults.managerId ?? ''} className={inputClass}>
-            <option value="">— не указан —</option>
-            {managers.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </div>
       </section>
 
       {/* Позиции */}
@@ -418,10 +405,12 @@ export function OrderForm({
         <Row label="Сумма к оплате" value={formatMoney(total)} strong />
         <Row label="Оплачено" value={formatMoney(Number(paid) || 0)} />
         <Row label="Остаток" value={formatMoney(balance)} highlight={balance > 0} />
-        <Row
-          label="Маржа по товарам"
-          value={`${formatMoney(margin(itemsTotal, cost))} (${marginPercent(itemsTotal, cost)}%)`}
-        />
+        {canSeeMargin && (
+          <Row
+            label="Маржа по товарам"
+            value={`${formatMoney(margin(itemsTotal, cost))} (${marginPercent(itemsTotal, cost)}%)`}
+          />
+        )}
       </section>
 
       {state.error && <FieldError>{state.error}</FieldError>}

@@ -1,24 +1,21 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { getCurrentManager } from '@/lib/session'
 import { updateOrder } from '@/actions/orders'
 import { OrderForm } from '@/components/OrderForm'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EditOrderPage({ params }: { params: { id: string } }) {
-  const [order, clients, managers, products] = await Promise.all([
+  const manager = await getCurrentManager()
+  const [order, clients, products] = await Promise.all([
     prisma.order.findFirst({
       where: { id: params.id, deletedAt: null },
       include: { items: true },
     }),
     prisma.client.findMany({
       where: { deletedAt: null },
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true },
-    }),
-    prisma.manager.findMany({
-      where: { deletedAt: null, active: true },
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
@@ -50,11 +47,9 @@ export default async function EditOrderPage({ params }: { params: { id: string }
       <OrderForm
         action={updateOrder.bind(null, order.id)}
         clients={clients}
-        managers={managers}
         products={productOptions}
         defaults={{
           clientId: order.clientId,
-          managerId: order.managerId,
           status: order.status,
           paymentStatus: order.paymentStatus,
           paymentMethod: order.paymentMethod,
@@ -76,6 +71,7 @@ export default async function EditOrderPage({ params }: { params: { id: string }
           })),
         }}
         submitLabel="Сохранить"
+        canSeeMargin={manager?.isAdmin ?? false}
       />
     </div>
   )

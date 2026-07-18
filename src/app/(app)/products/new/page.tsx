@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { createProduct } from '@/actions/products'
 import { ProductForm } from '@/components/ProductForm'
+import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  await requireAdmin()
   return (
     <div className="space-y-4">
       <div>

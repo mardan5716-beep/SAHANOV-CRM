@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { parseProduct } from '@/lib/validation'
+import { requireAdmin } from '@/lib/session'
 
 export type ProductFormState = {
   error?: string
@@ -24,6 +25,7 @@ export async function createProduct(
   _prevState: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
+  await requireAdmin()
   const parsed = parseProduct(formData)
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -47,6 +49,7 @@ export async function updateProduct(
   _prevState: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
+  await requireAdmin()
   const parsed = parseProduct(formData)
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -65,6 +68,7 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: string): Promise<void> {
+  await requireAdmin()
   await prisma.product.update({
     where: { id },
     data: { deletedAt: new Date() },

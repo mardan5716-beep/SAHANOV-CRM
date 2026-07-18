@@ -4,10 +4,12 @@ import { prisma } from '@/lib/prisma'
 import { updateProduct } from '@/actions/products'
 import { ProductForm } from '@/components/ProductForm'
 import { moneyToInput } from '@/lib/format'
+import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EditProductPage({ params }: { params: { id: string } }) {
+  await requireAdmin()
   const product = await prisma.product.findFirst({
     where: { id: params.id, deletedAt: null },
   })

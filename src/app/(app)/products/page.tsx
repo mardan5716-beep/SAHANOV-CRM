@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Prisma } from '@prisma/client'
 import { Category } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { getCurrentManager } from '@/lib/session'
 import { CATEGORY_ORDER } from '@/lib/enums'
 import { ProductCard } from '@/components/ProductCard'
 import { SearchInput } from '@/components/SearchInput'
@@ -14,6 +15,8 @@ export default async function ProductsPage({
 }: {
   searchParams: { q?: string; category?: string }
 }) {
+  const manager = await getCurrentManager()
+  const isAdmin = manager?.isAdmin ?? false
   const q = searchParams.q?.trim()
   const categoryParam = searchParams.category
   const category =
@@ -39,12 +42,14 @@ export default async function ProductsPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Склад</h1>
-        <Link
-          href="/products/new"
-          className="shrink-0 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-        >
-          + Товар
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/products/new"
+            className="shrink-0 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+          >
+            + Товар
+          </Link>
+        )}
       </div>
 
       <SearchInput placeholder="Поиск по артикулу или названию" />

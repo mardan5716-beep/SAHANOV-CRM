@@ -1,8 +1,6 @@
 export const SESSION_COOKIE = 'crm_session'
 
-const PAYLOAD = 'v1'
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30 // 30 дней
-
 const encoder = new TextEncoder()
 
 function toHex(buffer: ArrayBuffer): string {
@@ -11,7 +9,6 @@ function toHex(buffer: ArrayBuffer): string {
     .join('')
 }
 
-/** Сравнение строк, устойчивое по времени (защита от timing-атак). */
 function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false
   let result = 0
@@ -33,26 +30,22 @@ async function hmacHex(secret: string, payload: string): Promise<string> {
   return toHex(signature)
 }
 
-/**
- * Создаёт подписанный токен сессии: «payload.hmac».
- * Использует Web Crypto (crypto.subtle), поэтому работает и в Node,
- * и в Edge Runtime (где выполняется middleware).
- */
-export async function signSession(secret: string): Promise<string> {
-  const hmac = await hmacHex(secret, PAYLOAD)
-  return `${PAYLOAD}.${hmac}`
+/** Подписывает произвольную полезную нагрузку (id менеджера): «payload.hmac». */
+export async function signSession(payload: string, secret: string): Promise<string> {
+  const hmac = await hmacHex(secret, payload)
+  return `${payload}.${hmac}`
 }
 
-/** Проверяет подпись токена сессии. */
-export async function verifySession(token: string, secret: string): Promise<boolean> {
-  if (!token || typeof token !== 'string') return false
-  const parts = token.split('.')
-  if (parts.length !== 2) return false
-  const [payload, hmac] = parts
-  if (payload !== PAYLOAD || !hmac) return false
-
-  const expected = await hmacHex(secret, PAYLOAD)
-  return safeEqual(hmac, expected)
+/** Проверяет токен; возвращает payload (id менеджера) или null. */
+export async function verifySession(token: string, secret: string): Promise<string | null> {
+  if (!token || typeof token !== 'string') return null
+  const idx = token.lastIndexOf('.')
+  if (idx <= 0) return null
+  const payload = token.slice(0, idx)
+  const hmac = token.slice(idx + 1)
+  if (!payload || !hmac) return null
+  const expected = await hmacHex(secret, payload)
+  return safeEqual(hmac, expected) ? payload : null
 }
 
 function getSecret(): string {
@@ -63,14 +56,10 @@ function getSecret(): string {
   return secret
 }
 
-/**
- * Ставит httpOnly cookie-сессию на 30 дней.
- * next/headers импортируется лениво, чтобы модуль можно было тестировать
- * без серверного контекста Next.js.
- */
-export async function createSession(): Promise<void> {
+/** Ставит httpOnly cookie-сессию для менеджера на 30 дней. */
+export async function createSession(managerId: string): Promise<void> {
   const { cookies } = await import('next/headers')
-  const token = await signSession(getSecret())
+  const token = await signSession(managerId, getSecret())
   cookies().set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -84,4 +73,12 @@ export async function createSession(): Promise<void> {
 export async function destroySession(): Promise<void> {
   const { cookies } = await import('next/headers')
   cookies().delete(SESSION_COOKIE)
+}
+
+/** Возвращает id вошедшего менеджера из cookie (или null). */
+export async function getSessionManagerId(): Promise<string | null> {
+  const { cookies } = await import('next/headers')
+  const token = cookies().get(SESSION_COOKIE)?.value
+  if (!token) return null
+  return verifySession(token, getSecret())
 }

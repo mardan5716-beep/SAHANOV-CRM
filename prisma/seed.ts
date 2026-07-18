@@ -7,8 +7,11 @@ import {
   DiscountType,
   Category,
 } from '@prisma/client'
+import { hashPassword } from '../src/lib/password'
 
 const prisma = new PrismaClient()
+
+const DEFAULT_PASSWORD = 'changeme'
 
 function daysAgo(n: number): Date {
   const d = new Date()
@@ -48,11 +51,18 @@ async function main() {
   await prisma.client.deleteMany()
   await prisma.manager.deleteMany()
 
-  // Менеджеры
+  // Менеджеры (первый — админ). Пароль по умолчанию у всех — DEFAULT_PASSWORD.
+  const passwordHash = await hashPassword(DEFAULT_PASSWORD)
   const [daniyar, asel, timur] = await Promise.all([
-    prisma.manager.create({ data: { name: 'Данияр' } }),
-    prisma.manager.create({ data: { name: 'Асель' } }),
-    prisma.manager.create({ data: { name: 'Тимур' } }),
+    prisma.manager.create({
+      data: { name: 'Данияр', email: 'admin@glint.kz', passwordHash, isAdmin: true },
+    }),
+    prisma.manager.create({
+      data: { name: 'Асель', email: 'asel@glint.kz', passwordHash, isAdmin: false },
+    }),
+    prisma.manager.create({
+      data: { name: 'Тимур', email: 'timur@glint.kz', passwordHash, isAdmin: false },
+    }),
   ])
 
   // Клиенты
@@ -264,6 +274,7 @@ async function main() {
   }
 
   console.log('Seed завершён: 3 менеджера, 4 клиента, 12 товаров, 6 сделок.')
+  console.log('Вход админа: admin@glint.kz / changeme (смените пароль!)')
 }
 
 main()

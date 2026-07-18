@@ -1,30 +1,30 @@
 import { describe, it, expect } from 'vitest'
 import { signSession, verifySession } from './auth'
 
-describe('подпись сессии', () => {
+describe('сессия менеджера', () => {
   const secret = 'test-secret-0123456789abcdef0123456789'
 
-  it('подписанный токен проходит проверку тем же секретом', async () => {
-    const token = await signSession(secret)
-    expect(await verifySession(token, secret)).toBe(true)
+  it('подписанный токен возвращает id менеджера', async () => {
+    const token = await signSession('mgr_abc123', secret)
+    expect(await verifySession(token, secret)).toBe('mgr_abc123')
   })
 
-  it('токен не проходит проверку чужим секретом', async () => {
-    const token = await signSession(secret)
-    expect(await verifySession(token, 'completely-other-secret-value-xyz')).toBe(false)
+  it('токен с чужим секретом → null', async () => {
+    const token = await signSession('mgr_abc123', secret)
+    expect(await verifySession(token, 'completely-other-secret-value-xyz')).toBeNull()
   })
 
-  it('мусорный токен не проходит проверку', async () => {
-    expect(await verifySession('garbage', secret)).toBe(false)
+  it('мусорный токен → null', async () => {
+    expect(await verifySession('garbage', secret)).toBeNull()
   })
 
-  it('пустой токен не проходит проверку', async () => {
-    expect(await verifySession('', secret)).toBe(false)
+  it('пустой токен → null', async () => {
+    expect(await verifySession('', secret)).toBeNull()
   })
 
-  it('подделанная подпись не проходит проверку', async () => {
-    const token = await signSession(secret)
+  it('подделанная подпись → null', async () => {
+    const token = await signSession('mgr_abc123', secret)
     const tampered = token.slice(0, -4) + '0000'
-    expect(await verifySession(tampered, secret)).toBe(false)
+    expect(await verifySession(tampered, secret)).toBeNull()
   })
 })

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { getCurrentManager } from '@/lib/session'
 import { deleteOrder } from '@/actions/orders'
 import { OrderStatusStepper } from '@/components/OrderStatusStepper'
 import { PaymentBadge } from '@/components/OrderStatusBadge'
@@ -25,6 +26,8 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
   })
   if (!order) notFound()
 
+  const manager = await getCurrentManager()
+  const isAdmin = manager?.isAdmin ?? false
   const itemsTotal = orderTotal(order.items)
   const cost = orderCost(order.items)
   const delivery = Number(order.deliveryCost)
@@ -94,12 +97,16 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         <SumRow label="Сумма к оплате" value={formatMoney(total)} strong />
         <SumRow label="Оплачено" value={formatMoney(order.paid)} />
         <SumRow label="Остаток" value={formatMoney(balance)} highlight={balance > 0} />
-        <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-        <SumRow label="Себестоимость" value={formatMoney(cost)} muted />
-        <SumRow
-          label="Маржа по товарам"
-          value={`${formatMoney(margin(itemsTotal, cost))} · ${marginPercent(itemsTotal, cost)}%`}
-        />
+        {isAdmin && (
+          <>
+            <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+            <SumRow label="Себестоимость" value={formatMoney(cost)} muted />
+            <SumRow
+              label="Маржа по товарам"
+              value={`${formatMoney(margin(itemsTotal, cost))} · ${marginPercent(itemsTotal, cost)}%`}
+            />
+          </>
+        )}
       </section>
 
       {/* Оплата и доставка */}

@@ -5,7 +5,13 @@ import { usePathname } from 'next/navigation'
 import { logout } from '@/actions/auth'
 import { NAV_ITEMS, isNavActive } from './nav'
 
-export function TopNav() {
+export function TopNav({
+  isAdmin,
+  managerName,
+}: {
+  isAdmin: boolean
+  managerName: string
+}) {
   const pathname = usePathname()
 
   return (
@@ -37,16 +43,21 @@ export function TopNav() {
           })}
         </div>
         <div className="flex items-center gap-1">
-          <Link
-            href="/managers"
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-              isNavActive('/managers', pathname)
-                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-            }`}
-          >
-            Менеджеры
-          </Link>
+          {isAdmin && (
+            <Link
+              href="/managers"
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                isNavActive('/managers', pathname)
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                  : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+              }`}
+            >
+              Менеджеры
+            </Link>
+          )}
+          <span className="ml-2 hidden text-sm text-gray-500 lg:inline dark:text-gray-400">
+            {managerName}
+          </span>
           <form action={logout}>
             <button
               type="submit"

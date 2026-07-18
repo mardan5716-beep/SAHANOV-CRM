@@ -49,10 +49,26 @@ describe('productSchema', () => {
 
 describe('managerSchema', () => {
   it('пустое имя → ошибка', () => {
-    expect(managerSchema.safeParse({ name: '' }).success).toBe(false)
+    expect(managerSchema.safeParse({ name: '', email: 'a@b.kz', password: 'secret1' }).success).toBe(false)
   })
-  it('валидное имя → ок', () => {
-    expect(managerSchema.safeParse({ name: 'Данияр' }).success).toBe(true)
+  it('без email → ошибка', () => {
+    expect(managerSchema.safeParse({ name: 'Данияр', password: 'secret1' }).success).toBe(false)
+  })
+  it('короткий пароль → ошибка', () => {
+    expect(managerSchema.safeParse({ name: 'Данияр', email: 'a@b.kz', password: '123' }).success).toBe(false)
+  })
+  it('валидные данные → ок; email в нижний регистр, isAdmin=true', () => {
+    const r = managerSchema.safeParse({
+      name: 'Данияр',
+      email: 'Admin@Glint.KZ',
+      password: 'secret1',
+      isAdmin: 'on',
+    })
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.email).toBe('admin@glint.kz')
+      expect(r.data.isAdmin).toBe(true)
+    }
   })
 })
 

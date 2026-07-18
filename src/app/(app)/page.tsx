@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getDashboard } from '@/lib/dashboard'
+import { getCurrentManager } from '@/lib/session'
 import { formatMoney } from '@/lib/format'
 import { OrderCard } from '@/components/OrderCard'
 import { categoryLabel } from '@/lib/enums'
@@ -7,6 +8,8 @@ import { categoryLabel } from '@/lib/enums'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
+  const manager = await getCurrentManager()
+  const isAdmin = manager?.isAdmin ?? false
   const { activeCount, totalDue, monthRevenue, monthMargin, lowStock, recentOrders } =
     await getDashboard()
 
@@ -17,8 +20,12 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-3">
         <Kpi label="Активных сделок" value={String(activeCount)} href="/orders?active=1" />
         <Kpi label="К оплате" value={formatMoney(totalDue)} highlight={totalDue > 0} href="/orders?due=1" />
-        <Kpi label="Выручка за месяц" value={formatMoney(monthRevenue)} href="/orders?period=month" />
-        <Kpi label="Маржа за месяц" value={formatMoney(monthMargin)} href="/orders?period=month" />
+        {isAdmin && (
+          <>
+            <Kpi label="Выручка за месяц" value={formatMoney(monthRevenue)} href="/orders?period=month" />
+            <Kpi label="Маржа за месяц" value={formatMoney(monthMargin)} href="/orders?period=month" />
+          </>
+        )}
       </div>
 
       <section>

@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { parseOrder, type OrderItemInput } from '@/lib/validation'
 import { nextOrderNumber } from '@/lib/order-number'
+import { requireManager } from '@/lib/session'
 
 export type OrderFormState = {
   error?: string
@@ -77,6 +78,8 @@ export async function createOrder(
   _prevState: OrderFormState,
   formData: FormData,
 ): Promise<OrderFormState> {
+  const manager = await requireManager()
+
   // Инлайн-создание клиента прямо из формы сделки.
   let clientId = String(formData.get('clientId') ?? '')
   const newName = String(formData.get('newClientName') ?? '').trim()
@@ -102,7 +105,7 @@ export async function createOrder(
       data: {
         number,
         clientId: d.clientId,
-        managerId: d.managerId,
+        managerId: manager.id,
         status: d.status,
         paymentStatus: d.paymentStatus,
         paymentMethod: d.paymentMethod,
@@ -142,7 +145,6 @@ export async function updateOrder(
       where: { id },
       data: {
         clientId: d.clientId,
-        managerId: d.managerId,
         status: d.status,
         paymentStatus: d.paymentStatus,
         paymentMethod: d.paymentMethod,

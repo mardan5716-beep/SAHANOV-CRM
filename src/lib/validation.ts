@@ -80,6 +80,18 @@ export const productSchema = z.object({
 
 export const managerSchema = z.object({
   name: requiredString('Введите имя менеджера'),
+  email: z.preprocess(
+    (v) => String(v ?? '').trim().toLowerCase(),
+    z.string().email('Некорректный email'),
+  ),
+  password: z.preprocess(
+    (v) => String(v ?? ''),
+    z.string().min(6, 'Пароль минимум 6 символов'),
+  ),
+  isAdmin: z.preprocess(
+    (v) => v === 'on' || v === 'true' || v === true,
+    z.boolean(),
+  ),
 })
 
 // ─── Позиция заказа ─────────────────────────────────────────────────────────
@@ -149,7 +161,12 @@ export function parseProduct(formData: FormData) {
 }
 
 export function parseManager(formData: FormData) {
-  return managerSchema.safeParse({ name: formData.get('name') })
+  return managerSchema.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    password: formData.get('password'),
+    isAdmin: formData.get('isAdmin'),
+  })
 }
 
 export function parseOrder(formData: FormData) {
