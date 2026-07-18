@@ -7,17 +7,13 @@ import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ClientPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function ClientPage({ params }: { params: { id: string } }) {
   const client = await prisma.client.findFirst({
     where: { id: params.id, deletedAt: null },
     include: {
       orders: {
         where: { deletedAt: null },
-        include: { client: true },
+        include: { client: true, items: true },
         orderBy: { createdAt: 'desc' },
       },
     },
@@ -27,13 +23,13 @@ export default async function ClientPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/clients"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400"
-        >
+        <Link href="/clients" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400">
           ← Клиенты
         </Link>
         <h1 className="mt-1 text-2xl font-bold">{client.name}</h1>
+        {client.company && (
+          <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{client.company}</div>
+        )}
       </div>
 
       {client.phone && (
@@ -41,50 +37,36 @@ export default async function ClientPage({
           href={`tel:${client.phone.replace(/\s/g, '')}`}
           className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-base font-semibold text-white transition active:scale-[0.99]"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            className="h-5 w-5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L20 13l1 4v3a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 0-1Z" />
-          </svg>
           Позвонить {client.phone}
         </a>
       )}
 
       <dl className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <Row label="Телефон" value={client.phone} />
-        <Row label="Адрес" value={client.address} />
-        <Row label="Заметки" value={client.notes} multiline />
+        <Row label="Компания" value={client.company} />
+        <Row label="Источник" value={client.source} />
       </dl>
 
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">
-            Заказы{' '}
-            <span className="text-sm font-normal text-gray-400">
-              ({client.orders.length})
-            </span>
+            Сделки <span className="text-sm font-normal text-gray-400">({client.orders.length})</span>
           </h2>
           <Link
             href={`/orders/new?clientId=${client.id}`}
             className="shrink-0 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition active:scale-[0.98]"
           >
-            + Заказ
+            + Сделка
           </Link>
         </div>
         {client.orders.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-400 dark:border-gray-800">
-            У клиента пока нет заказов
+            У клиента пока нет сделок
           </p>
         ) : (
           <div className="space-y-2">
             {client.orders.map((order) => (
-              <OrderCard key={order.id} order={order} showClient={false} />
+              <OrderCard key={order.id} order={order} />
             ))}
           </div>
         )}
@@ -102,8 +84,8 @@ export default async function ClientPage({
           label="Удалить"
           confirmText={
             client.orders.length > 0
-              ? `Удалить клиента «${client.name}»? Вместе с ним будут удалены все его заказы (${client.orders.length}). Действие необратимо.`
-              : `Удалить клиента «${client.name}»? Действие необратимо.`
+              ? `Удалить клиента «${client.name}»? Вместе с ним скроются все его сделки (${client.orders.length}).`
+              : `Удалить клиента «${client.name}»?`
           }
         />
       </div>
@@ -111,21 +93,11 @@ export default async function ClientPage({
   )
 }
 
-function Row({
-  label,
-  value,
-  multiline = false,
-}: {
-  label: string
-  value: string | null
-  multiline?: boolean
-}) {
+function Row({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <dt className="text-xs text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className={`mt-0.5 ${multiline ? 'whitespace-pre-wrap' : ''}`}>
-        {value || <span className="text-gray-400">—</span>}
-      </dd>
+      <dd className="mt-0.5">{value || <span className="text-gray-400">—</span>}</dd>
     </div>
   )
 }

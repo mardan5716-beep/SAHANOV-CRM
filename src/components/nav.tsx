@@ -1,11 +1,12 @@
 import type { SVGProps } from 'react'
 
-function HomeIcon(props: SVGProps<SVGSVGElement>) {
+function DashboardIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 9.5V21h14V9.5" />
-      <path d="M9 21v-6h6v6" />
+      <rect x="3" y="3" width="7" height="9" rx="1.5" />
+      <rect x="14" y="3" width="7" height="5" rx="1.5" />
+      <rect x="14" y="12" width="7" height="9" rx="1.5" />
+      <rect x="3" y="16" width="7" height="5" rx="1.5" />
     </svg>
   )
 }
@@ -13,9 +14,18 @@ function HomeIcon(props: SVGProps<SVGSVGElement>) {
 function OrdersIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="5" y="4" width="14" height="17" rx="2" />
-      <path d="M9 4V3h6v1" />
-      <path d="M9 10h6M9 14h6M9 18h4" />
+      <path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+      <path d="M8.5 12h7M8.5 16h5" />
+    </svg>
+  )
+}
+
+function StockIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Z" />
+      <path d="M3 7.5 12 12l9-4.5M12 12v9" />
     </svg>
   )
 }
@@ -38,8 +48,9 @@ export type NavItem = {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: '/', label: 'Сегодня', Icon: HomeIcon },
-  { href: '/orders', label: 'Заказы', Icon: OrdersIcon },
+  { href: '/', label: 'Дашборд', Icon: DashboardIcon },
+  { href: '/orders', label: 'Сделки', Icon: OrdersIcon },
+  { href: '/products', label: 'Склад', Icon: StockIcon },
   { href: '/clients', label: 'Клиенты', Icon: ClientsIcon },
 ]
 

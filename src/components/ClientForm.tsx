@@ -7,13 +7,12 @@ import type { ClientFormState } from '@/actions/clients'
 export type ClientDefaults = {
   name?: string
   phone?: string | null
-  address?: string | null
-  notes?: string | null
+  company?: string | null
+  source?: string | null
 }
 
 const inputClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900'
-
 const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300'
 
 export function ClientForm({
@@ -34,58 +33,29 @@ export function ClientForm({
         <label htmlFor="name" className={labelClass}>
           Имя
         </label>
-        <input
-          id="name"
-          name="name"
-          defaultValue={defaults.name ?? ''}
-          placeholder="Имя клиента"
-          className={inputClass}
-        />
-        {err.name?.[0] && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {err.name[0]}
-          </p>
-        )}
+        <input id="name" name="name" defaultValue={defaults.name ?? ''} placeholder="Имя клиента" className={inputClass} />
+        {err.name?.[0] && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{err.name[0]}</p>}
       </div>
 
       <div>
         <label htmlFor="phone" className={labelClass}>
           Телефон
         </label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          defaultValue={defaults.phone ?? ''}
-          placeholder="+7 900 000-00-00"
-          className={inputClass}
-        />
+        <input id="phone" name="phone" type="tel" inputMode="tel" defaultValue={defaults.phone ?? ''} placeholder="+7 700 000-00-00" className={inputClass} />
       </div>
 
       <div>
-        <label htmlFor="address" className={labelClass}>
-          Адрес
+        <label htmlFor="company" className={labelClass}>
+          Компания
         </label>
-        <input
-          id="address"
-          name="address"
-          defaultValue={defaults.address ?? ''}
-          className={inputClass}
-        />
+        <input id="company" name="company" defaultValue={defaults.company ?? ''} placeholder="Необязательно" className={inputClass} />
       </div>
 
       <div>
-        <label htmlFor="notes" className={labelClass}>
-          Заметки
+        <label htmlFor="source" className={labelClass}>
+          Источник
         </label>
-        <textarea
-          id="notes"
-          name="notes"
-          rows={3}
-          defaultValue={defaults.notes ?? ''}
-          className={inputClass}
-        />
+        <input id="source" name="source" defaultValue={defaults.source ?? ''} placeholder="Instagram, Kaspi, сарафан…" className={inputClass} />
       </div>
 
       <SubmitButton>{submitLabel}</SubmitButton>

@@ -3,24 +3,37 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { updateOrder } from '@/actions/orders'
 import { OrderForm } from '@/components/OrderForm'
-import { moneyToInput, toDateInput } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-export default async function EditOrderPage({
-  params,
-}: {
-  params: { id: string }
-}) {
-  const [order, clients] = await Promise.all([
-    prisma.order.findFirst({ where: { id: params.id, deletedAt: null } }),
+export default async function EditOrderPage({ params }: { params: { id: string } }) {
+  const [order, clients, managers, products] = await Promise.all([
+    prisma.order.findFirst({
+      where: { id: params.id, deletedAt: null },
+      include: { items: true },
+    }),
     prisma.client.findMany({
       where: { deletedAt: null },
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
+    prisma.manager.findMany({
+      where: { deletedAt: null, active: true },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    }),
+    prisma.product.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' } }),
   ])
   if (!order) notFound()
+
+  const productOptions = products.map((p) => ({
+    id: p.id,
+    sku: p.sku,
+    name: p.name,
+    price: Number(p.price),
+    cost: Number(p.cost),
+    stock: p.stock,
+  }))
 
   return (
     <div className="space-y-4">
@@ -31,22 +44,35 @@ export default async function EditOrderPage({
         >
           ← Назад
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Редактирование заказа</h1>
+        <h1 className="mt-1 text-2xl font-bold">Редактирование {order.number}</h1>
       </div>
 
       <OrderForm
         action={updateOrder.bind(null, order.id)}
         clients={clients}
+        managers={managers}
+        products={productOptions}
         defaults={{
           clientId: order.clientId,
-          title: order.title,
-          description: order.description,
+          managerId: order.managerId,
           status: order.status,
-          price: moneyToInput(order.price),
-          prepaid: moneyToInput(order.prepaid),
-          measureDate: toDateInput(order.measureDate),
-          dueDate: toDateInput(order.dueDate),
+          paymentStatus: order.paymentStatus,
+          paymentMethod: order.paymentMethod,
+          paid: Number(order.paid),
+          deliveryMethod: order.deliveryMethod,
+          deliveryAddress: order.deliveryAddress,
+          trackNumber: order.trackNumber,
           notes: order.notes,
+          items: order.items.map((i) => ({
+            productId: i.productId ?? '',
+            sku: i.sku,
+            name: i.name,
+            unitPrice: Number(i.unitPrice),
+            unitCost: Number(i.unitCost),
+            qty: i.qty,
+            discountType: i.discountType,
+            discountValue: Number(i.discountValue),
+          })),
         }}
         submitLabel="Сохранить"
       />

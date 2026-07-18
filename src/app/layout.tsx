@@ -2,13 +2,13 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
-  title: 'CRM Мебель',
-  description: 'CRM для мастера по мебели из нержавеющей стали',
+  title: 'Glint & Steel CRM',
+  description: 'CRM для производства и продажи аксессуаров из нержавеющей стали',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'CRM Мебель',
+    title: 'Glint & Steel',
   },
   icons: {
     icon: '/icon-192.png',

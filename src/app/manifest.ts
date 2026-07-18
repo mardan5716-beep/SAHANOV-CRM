@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'CRM Мебель',
-    short_name: 'CRM',
-    description: 'CRM для мастера по мебели из нержавеющей стали',
+    name: 'Glint & Steel CRM',
+    short_name: 'Glint & Steel',
+    description: 'CRM для производства и продажи аксессуаров из нержавеющей стали',
     lang: 'ru',
     start_url: '/',
     display: 'standalone',

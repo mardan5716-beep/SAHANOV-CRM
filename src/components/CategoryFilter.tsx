@@ -1,22 +1,19 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { STATUS_ORDER, statusLabel } from '@/lib/status'
+import { CATEGORY_ORDER, categoryLabel } from '@/lib/enums'
 
-/** Фильтр заказов по статусу: чипы, значение пишется в query-параметр `status`. */
-export function StatusFilter() {
+/** Фильтр товаров по категории (query-параметр `category`). */
+export function CategoryFilter() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const current = searchParams.get('status')
+  const current = searchParams.get('category')
 
-  function select(status: string | null) {
+  function select(category: string | null) {
     const params = new URLSearchParams(searchParams.toString())
-    if (status) {
-      params.set('status', status)
-    } else {
-      params.delete('status')
-    }
+    if (category) params.set('category', category)
+    else params.delete('category')
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
@@ -32,9 +29,9 @@ export function StatusFilter() {
       <button onClick={() => select(null)} className={chip(!current)}>
         Все
       </button>
-      {STATUS_ORDER.map((s) => (
-        <button key={s} onClick={() => select(s)} className={chip(current === s)}>
-          {statusLabel(s)}
+      {CATEGORY_ORDER.map((c) => (
+        <button key={c} onClick={() => select(c)} className={chip(current === c)}>
+          {categoryLabel(c)}
         </button>
       ))}
     </div>

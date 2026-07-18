@@ -33,8 +33,8 @@ export default async function EditClientPage({
         defaults={{
           name: client.name,
           phone: client.phone,
-          address: client.address,
-          notes: client.notes,
+          company: client.company,
+          source: client.source,
         }}
         submitLabel="Сохранить"
       />

@@ -13,11 +13,9 @@ export function ClientCard({ client }: { client: ClientWithCount }) {
     >
       <div className="min-w-0">
         <h3 className="truncate font-semibold">{client.name}</h3>
-        {client.phone && (
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            {client.phone}
-          </p>
-        )}
+        <p className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
+          {client.company || client.phone || '—'}
+        </p>
       </div>
       {typeof count === 'number' && (
         <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
@@ -31,7 +29,7 @@ export function ClientCard({ client }: { client: ClientWithCount }) {
 function pluralOrders(n: number): string {
   const mod10 = n % 10
   const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return 'заказ'
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'заказа'
-  return 'заказов'
+  if (mod10 === 1 && mod100 !== 11) return 'сделка'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'сделки'
+  return 'сделок'
 }

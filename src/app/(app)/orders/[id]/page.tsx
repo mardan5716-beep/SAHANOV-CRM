@@ -2,75 +2,122 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { deleteOrder } from '@/actions/orders'
-import { StatusStepper } from '@/components/StatusStepper'
+import { OrderStatusStepper } from '@/components/OrderStatusStepper'
+import { PaymentBadge } from '@/components/OrderStatusBadge'
 import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton'
-import { formatMoney, formatDate, balance } from '@/lib/format'
+import { formatMoney, formatDate } from '@/lib/format'
+import {
+  lineTotal,
+  orderTotal,
+  orderCost,
+  orderBalance,
+  margin,
+  marginPercent,
+} from '@/lib/order-calc'
+import { paymentMethodLabel, deliveryMethodLabel, discountTypeLabel } from '@/lib/enums'
 
 export const dynamic = 'force-dynamic'
 
-export default async function OrderPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function OrderPage({ params }: { params: { id: string } }) {
   const order = await prisma.order.findFirst({
     where: { id: params.id, deletedAt: null },
-    include: { client: true },
+    include: { client: true, manager: true, items: true },
   })
   if (!order) notFound()
 
-  const rest = balance(order.price, order.prepaid)
+  const total = orderTotal(order.items)
+  const cost = orderCost(order.items)
+  const balance = orderBalance(total, order.paid)
 
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/orders"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400"
-        >
-          ← Заказы
+        <Link href="/orders" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400">
+          ← Сделки
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{order.title}</h1>
+        <div className="mt-1 flex items-center gap-2">
+          <h1 className="text-2xl font-bold">{order.number}</h1>
+          <PaymentBadge status={order.paymentStatus} />
+        </div>
         <Link
           href={`/clients/${order.clientId}`}
           className="mt-1 inline-block text-sm font-medium text-blue-600 dark:text-blue-400"
         >
           {order.client.name}
         </Link>
+        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+          {formatDate(order.createdAt)}
+          {order.manager ? ` · ${order.manager.name}` : ''}
+        </span>
       </div>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-          Статус
-        </h2>
-        <StatusStepper orderId={order.id} status={order.status} />
+        <h2 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">Статус</h2>
+        <OrderStatusStepper orderId={order.id} status={order.status} />
       </section>
 
-      <section className="grid grid-cols-3 gap-3">
-        <Field label="Сумма" value={formatMoney(order.price)} />
-        <Field label="Предоплата" value={formatMoney(order.prepaid)} />
-        <Field
-          label="Остаток"
-          value={formatMoney(rest)}
-          highlight={rest > 0}
+      {/* Позиции */}
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">Позиции</h2>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+          {order.items.map((it, i) => (
+            <div
+              key={it.id}
+              className={`flex items-center justify-between gap-3 p-3 text-sm ${
+                i > 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''
+              }`}
+            >
+              <div className="min-w-0">
+                <div className="truncate font-medium">{it.name}</div>
+                <div className="font-mono text-xs text-gray-400">{it.sku}</div>
+              </div>
+              <div className="shrink-0 text-right">
+                <div>{formatMoney(lineTotal(it))}</div>
+                <div className="text-xs text-gray-400">
+                  {it.qty} × {formatMoney(it.unitPrice)}
+                  {Number(it.discountValue) > 0
+                    ? ` − ${Number(it.discountValue)}${discountTypeLabel(it.discountType)}`
+                    : ''}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Итоги */}
+      <section className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
+        <SumRow label="Сумма" value={formatMoney(total)} strong />
+        <SumRow label="Оплачено" value={formatMoney(order.paid)} />
+        <SumRow label="Остаток" value={formatMoney(balance)} highlight={balance > 0} />
+        <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+        <SumRow label="Себестоимость" value={formatMoney(cost)} muted />
+        <SumRow
+          label="Маржа"
+          value={`${formatMoney(margin(total, cost))} · ${marginPercent(total, cost)}%`}
         />
       </section>
 
-      {(order.measureDate || order.dueDate) && (
-        <section className="grid grid-cols-2 gap-3">
-          {order.measureDate && (
-            <Field label="Дата замера" value={formatDate(order.measureDate)} />
-          )}
-          {order.dueDate && (
-            <Field label="Срок сдачи" value={formatDate(order.dueDate)} />
-          )}
+      {/* Оплата и доставка */}
+      <section className="grid grid-cols-2 gap-3 text-sm">
+        <InfoCard label="Способ оплаты" value={order.paymentMethod ? paymentMethodLabel(order.paymentMethod) : '—'} />
+        <InfoCard label="Получение" value={deliveryMethodLabel(order.deliveryMethod)} />
+        {order.deliveryMethod === 'DELIVERY' && (
+          <>
+            <InfoCard label="Адрес" value={order.deliveryAddress || '—'} />
+            <InfoCard label="Трек-номер" value={order.trackNumber || '—'} />
+          </>
+        )}
+      </section>
+
+      {order.notes && (
+        <section>
+          <h2 className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Заметки</h2>
+          <p className="whitespace-pre-wrap rounded-2xl border border-gray-200 bg-white p-4 text-sm dark:border-gray-800 dark:bg-gray-900">
+            {order.notes}
+          </p>
         </section>
       )}
-
-      {order.description && (
-        <TextBlock title="Описание" text={order.description} />
-      )}
-      {order.notes && <TextBlock title="Заметки" text={order.notes} />}
 
       <div className="grid grid-cols-2 gap-3 pt-2">
         <Link
@@ -82,45 +129,45 @@ export default async function OrderPage({
         <ConfirmDeleteButton
           action={deleteOrder.bind(null, order.id)}
           label="Удалить"
-          confirmText={`Удалить заказ «${order.title}»? Действие необратимо.`}
+          confirmText={`Удалить сделку ${order.number}? Действие можно отменить только через базу.`}
         />
       </div>
     </div>
   )
 }
 
-function Field({
+function SumRow({
   label,
   value,
+  strong = false,
   highlight = false,
+  muted = false,
 }: {
   label: string
   value: string
+  strong?: boolean
   highlight?: boolean
+  muted?: boolean
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-      <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
-      <div
-        className={`mt-1 font-semibold ${
+    <div className="flex items-center justify-between py-0.5 text-sm">
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
+      <span
+        className={`${strong ? 'text-base font-bold' : 'font-medium'} ${
           highlight ? 'text-red-600 dark:text-red-400' : ''
-        }`}
+        } ${muted ? 'text-gray-500 dark:text-gray-400' : ''}`}
       >
         {value}
-      </div>
+      </span>
     </div>
   )
 }
 
-function TextBlock({ title, text }: { title: string; text: string }) {
+function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <section>
-      <h2 className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-        {title}
-      </h2>
-      <p className="whitespace-pre-wrap rounded-2xl border border-gray-200 bg-white p-4 text-sm dark:border-gray-800 dark:bg-gray-900">
-        {text}
-      </p>
-    </section>
+    <div className="rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+      <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="mt-0.5 font-medium">{value}</div>
+    </div>
   )
 }

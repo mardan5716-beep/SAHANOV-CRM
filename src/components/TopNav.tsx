@@ -14,9 +14,9 @@ export function TopNav() {
         <div className="flex items-center gap-1">
           <span className="mr-4 flex items-center gap-2 font-bold">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs text-white">
-              CRM
+              GS
             </span>
-            Мебель
+            Glint &amp; Steel
           </span>
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const active = isNavActive(href, pathname)
@@ -36,14 +36,26 @@ export function TopNav() {
             )
           })}
         </div>
-        <form action={logout}>
-          <button
-            type="submit"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+        <div className="flex items-center gap-1">
+          <Link
+            href="/managers"
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+              isNavActive('/managers', pathname)
+                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+            }`}
           >
-            Выйти
-          </button>
-        </form>
+            Менеджеры
+          </Link>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+            >
+              Выйти
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   )

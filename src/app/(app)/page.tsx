@@ -1,158 +1,99 @@
 import Link from 'next/link'
-import type { Order, Client } from '@prisma/client'
-import { getToday, isOverdue } from '@/lib/reminders'
-import { formatMoney, formatDate, balance } from '@/lib/format'
-import { StatusBadge } from '@/components/StatusBadge'
+import { getDashboard } from '@/lib/dashboard'
+import { formatMoney } from '@/lib/format'
+import { OrderCard } from '@/components/OrderCard'
+import { categoryLabel } from '@/lib/enums'
 
 export const dynamic = 'force-dynamic'
 
-type OrderWithClient = Order & { client: Client }
-
-export default async function TodayPage() {
-  const { now, measures, dues, awaiting, inWorkCount, totalBalance } =
-    await getToday()
+export default async function DashboardPage() {
+  const { activeCount, totalDue, monthRevenue, monthMargin, lowStock, recentOrders } =
+    await getDashboard()
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">Сегодня</h1>
-        <p className="mt-0.5 text-sm capitalize text-gray-500 dark:text-gray-400">
-          {formatDate(now)}
-        </p>
-      </header>
+      <h1 className="text-2xl font-bold">Дашборд</h1>
 
       <div className="grid grid-cols-2 gap-3">
-        <Counter label="Заказов в работе" value={String(inWorkCount)} />
-        <Counter label="К оплате" value={formatMoney(totalBalance)} />
+        <Kpi label="Активных сделок" value={String(activeCount)} />
+        <Kpi label="К оплате" value={formatMoney(totalDue)} highlight={totalDue > 0} />
+        <Kpi label="Выручка за месяц" value={formatMoney(monthRevenue)} />
+        <Kpi label="Маржа за месяц" value={formatMoney(monthMargin)} />
       </div>
 
-      <Section title="Замеры" count={measures.length} empty="Нет запланированных замеров">
-        {measures.map((o) => (
-          <ReminderRow
-            key={o.id}
-            order={o}
-            date={o.measureDate!}
-            overdue={isOverdue(o.measureDate!, now)}
-          />
-        ))}
-      </Section>
+      <section>
+        <div className="mb-2 flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Мало на складе</h2>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            {lowStock.length}
+          </span>
+        </div>
+        {lowStock.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-400 dark:border-gray-800">
+            Все остатки в норме
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {lowStock.map((p) => (
+              <Link
+                key={p.id}
+                href={`/products/${p.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 active:scale-[0.99] dark:border-gray-800 dark:bg-gray-900"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-semibold">{p.name}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {categoryLabel(p.category)}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right text-sm font-semibold text-red-600 dark:text-red-400">
+                  {p.stock} шт
+                  <div className="text-xs font-normal text-gray-400">мин. {p.minStock}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
-      <Section title="Сроки сдачи" count={dues.length} empty="Нет ближайших сроков">
-        {dues.map((o) => (
-          <ReminderRow
-            key={o.id}
-            order={o}
-            date={o.dueDate!}
-            overdue={isOverdue(o.dueDate!, now)}
-          />
-        ))}
-      </Section>
-
-      <Section title="Ждут оплаты" count={awaiting.length} empty="Нет задолженностей">
-        {awaiting.map((o) => (
-          <PaymentRow key={o.id} order={o} />
-        ))}
-      </Section>
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Последние сделки</h2>
+          <Link href="/orders" className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            Все →
+          </Link>
+        </div>
+        {recentOrders.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-400 dark:border-gray-800">
+            Сделок пока нет
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {recentOrders.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
 
-function Counter({ label, value }: { label: string; value: string }) {
+function Kpi({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+}) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <div className="text-2xl font-bold">{value}</div>
+      <div className={`text-2xl font-bold ${highlight ? 'text-red-600 dark:text-red-400' : ''}`}>
+        {value}
+      </div>
       <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{label}</div>
     </div>
-  )
-}
-
-function Section({
-  title,
-  count,
-  empty,
-  children,
-}: {
-  title: string
-  count: number
-  empty: string
-  children: React.ReactNode
-}) {
-  return (
-    <section>
-      <div className="mb-2 flex items-center gap-2">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-          {count}
-        </span>
-      </div>
-      {count === 0 ? (
-        <p className="rounded-2xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-400 dark:border-gray-800">
-          {empty}
-        </p>
-      ) : (
-        <div className="space-y-2">{children}</div>
-      )}
-    </section>
-  )
-}
-
-function ReminderRow({
-  order,
-  date,
-  overdue,
-}: {
-  order: OrderWithClient
-  date: Date
-  overdue: boolean
-}) {
-  return (
-    <Link
-      href={`/orders/${order.id}`}
-      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 active:scale-[0.99] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
-    >
-      <div className="min-w-0">
-        <div className="truncate font-semibold">{order.title}</div>
-        <div className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-          {order.client.name}
-        </div>
-      </div>
-      <div className="shrink-0 text-right">
-        <div
-          className={`text-sm font-medium ${
-            overdue ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-300'
-          }`}
-        >
-          {formatDate(date)}
-        </div>
-        {overdue && (
-          <div className="text-xs font-medium text-red-500">просрочено</div>
-        )}
-      </div>
-    </Link>
-  )
-}
-
-function PaymentRow({ order }: { order: OrderWithClient }) {
-  const rest = balance(order.price, order.prepaid)
-  return (
-    <Link
-      href={`/orders/${order.id}`}
-      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 active:scale-[0.99] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
-    >
-      <div className="min-w-0">
-        <div className="truncate font-semibold">{order.title}</div>
-        <div className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-          {order.client.name}
-        </div>
-      </div>
-      <div className="shrink-0 text-right">
-        <div className="text-sm font-semibold text-red-600 dark:text-red-400">
-          {formatMoney(rest)}
-        </div>
-        <div className="mt-1">
-          <StatusBadge status={order.status} />
-        </div>
-      </div>
-    </Link>
   )
 }

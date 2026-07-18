@@ -1,108 +1,264 @@
-import { PrismaClient, Status } from '@prisma/client'
+import {
+  PrismaClient,
+  OrderStatus,
+  PaymentStatus,
+  PaymentMethod,
+  DeliveryMethod,
+  DiscountType,
+  Category,
+} from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-/** Дата со смещением на n дней от сегодня (полдень, чтобы избежать пограничных зон). */
-function daysFromNow(n: number): Date {
+function daysAgo(n: number): Date {
   const d = new Date()
   d.setHours(12, 0, 0, 0)
-  d.setDate(d.getDate() + n)
+  d.setDate(d.getDate() - n)
   return d
 }
 
+function orderNumber(n: number): string {
+  return `GS-${String(n).padStart(5, '0')}`
+}
+
+type SeedItem = {
+  productId: string
+  sku: string
+  name: string
+  unitPrice: number
+  unitCost: number
+  qty: number
+  discountType: DiscountType
+  discountValue: number
+}
+
+function lineSum(i: SeedItem): number {
+  const sub = i.qty * i.unitPrice
+  const disc = i.discountType === 'PERCENT' ? (sub * i.discountValue) / 100 : i.discountValue
+  return Math.max(0, sub - disc)
+}
+function totalSum(items: SeedItem[]): number {
+  return items.reduce((s, i) => s + lineSum(i), 0)
+}
+
 async function main() {
-  // Очистка (заказы удалятся каскадно вместе с клиентами, но чистим явно для наглядности)
+  await prisma.orderItem.deleteMany()
   await prisma.order.deleteMany()
+  await prisma.product.deleteMany()
   await prisma.client.deleteMany()
+  await prisma.manager.deleteMany()
 
-  const ivan = await prisma.client.create({
+  // Менеджеры
+  const [daniyar, asel, timur] = await Promise.all([
+    prisma.manager.create({ data: { name: 'Данияр' } }),
+    prisma.manager.create({ data: { name: 'Асель' } }),
+    prisma.manager.create({ data: { name: 'Тимур' } }),
+  ])
+
+  // Клиенты
+  const aigul = await prisma.client.create({
+    data: { name: 'Айгуль Смагулова', phone: '+7 700 111 22 33', source: 'Instagram' },
+  })
+  const komfort = await prisma.client.create({
     data: {
-      name: 'Иван Петров',
-      phone: '+7 900 123-45-67',
-      address: 'г. Москва, ул. Ленина, 10',
-      notes: 'Постоянный клиент, заказывает регулярно.',
+      name: 'Ерлан (ТОО «Комфорт»)',
+      phone: '+7 701 222 33 44',
+      company: 'ТОО «Комфорт»',
+      source: 'Kaspi',
     },
   })
-
-  const stalDom = await prisma.client.create({
-    data: {
-      name: 'ООО «СтальДом» (Сергей)',
-      phone: '+7 926 555-10-20',
-      address: 'г. Химки, Складская, 5, офис 3',
-      notes: 'Оптовые заказы для объектов.',
-    },
+  const danara = await prisma.client.create({
+    data: { name: 'Данара Ким', phone: '+7 702 333 44 55', source: 'сарафан' },
+  })
+  const nurlan = await prisma.client.create({
+    data: { name: 'Нурлан Абаев', phone: '+7 705 444 55 66', source: 'сайт' },
   })
 
-  const anna = await prisma.client.create({
-    data: {
-      name: 'Анна Кузнецова',
-      phone: '+7 903 777-88-99',
-      address: 'г. Одинцово, пер. Садовый, 2',
-    },
-  })
+  // Товары (часть с остатком на минимуме или ниже)
+  const P = await Promise.all(
+    [
+      ['GS-SHELF-01', 'Полка настенная 60 см', Category.SHELVES, 14000, 8000, 12, 4, 'Стеллаж A1'],
+      ['GS-SHELF-02', 'Полка угловая', Category.SHELVES, 16000, 9000, 3, 4, 'Стеллаж A1'],
+      ['GS-CONS-01', 'Консоль в прихожую', Category.CONSOLES, 42000, 25000, 5, 2, 'Стеллаж B1'],
+      ['GS-SIDE-01', 'Приставной столик', Category.SIDE_TABLES, 28000, 16000, 8, 3, 'Стеллаж B2'],
+      ['GS-PLANT-01', 'Подставка для цветов', Category.PLANT_STANDS, 9000, 4500, 20, 5, 'Стеллаж C1'],
+      ['GS-PLANT-02', 'Подставка тройная', Category.PLANT_STANDS, 15000, 8000, 2, 4, 'Стеллаж C1'],
+      ['GS-ETAG-01', 'Этажерка 4 яруса', Category.ETAGERES, 32000, 18000, 6, 2, 'Стеллаж C2'],
+      ['GS-ORG-01', 'Органайзер для кухни', Category.ORGANIZERS, 7000, 3500, 30, 8, 'Стеллаж D1'],
+      ['GS-MIRR-01', 'Зеркало круглое', Category.MIRRORS, 22000, 12000, 4, 3, 'Стеллаж D2'],
+      ['GS-BATH-01', 'Держатель для полотенец', Category.BATHROOM, 6000, 2800, 25, 10, 'Стеллаж E1'],
+      ['GS-KITCH-01', 'Рейлинг кухонный', Category.KITCHEN, 8500, 4000, 1, 5, 'Стеллаж E2'],
+      ['GS-OTH-01', 'Крючки настенные (комплект)', Category.OTHER, 3000, 1200, 40, 10, 'Стеллаж F1'],
+    ].map(([sku, name, category, price, cost, stock, minStock, location]) =>
+      prisma.product.create({
+        data: {
+          sku: sku as string,
+          name: name as string,
+          category: category as Category,
+          price: price as number,
+          cost: cost as number,
+          stock: stock as number,
+          minStock: minStock as number,
+          location: location as string,
+        },
+      }),
+    ),
+  )
+  const bySku = Object.fromEntries(P.map((p) => [p.sku, p]))
 
-  await prisma.order.create({
-    data: {
-      clientId: ivan.id,
-      title: 'Перила для лестницы',
-      description: 'Нержавеющая труба Ø50, 6 стоек, поручень на второй этаж.',
-      status: Status.NEW,
-      price: 45000,
-      prepaid: 0,
-      measureDate: daysFromNow(0), // замер сегодня
-    },
-  })
+  function item(sku: string, qty: number, discountValue = 0, discountType = DiscountType.PERCENT): SeedItem {
+    const p = bySku[sku]
+    return {
+      productId: p.id,
+      sku: p.sku,
+      name: p.name,
+      unitPrice: Number(p.price),
+      unitCost: Number(p.cost),
+      qty,
+      discountType,
+      discountValue,
+    }
+  }
 
-  await prisma.order.create({
-    data: {
-      clientId: stalDom.id,
-      title: 'Кухонная столешница из нержавейки',
-      description: 'Рабочая поверхность 3 м с бортиком, шлифовка.',
-      status: Status.MEASURE,
-      price: 80000,
-      prepaid: 20000,
-      measureDate: daysFromNow(-1), // замер просрочен
-    },
-  })
+  type OrderSeed = {
+    n: number
+    clientId: string
+    managerId: string
+    status: OrderStatus
+    paymentStatus: PaymentStatus
+    paymentMethod?: PaymentMethod
+    paidRatio: number // доля от суммы
+    delivery: DeliveryMethod
+    deliveryAddress?: string
+    trackNumber?: string
+    shipped?: boolean // остатки списаны
+    createdAt: Date
+    items: SeedItem[]
+  }
 
-  await prisma.order.create({
-    data: {
-      clientId: anna.id,
-      title: 'Стеллаж для склада',
-      description: '5 ярусов, нагрузка до 200 кг на полку.',
-      status: Status.PRODUCTION,
-      price: 60000,
-      prepaid: 30000,
-      dueDate: daysFromNow(2), // срок сдачи через 2 дня
+  const orders: OrderSeed[] = [
+    {
+      n: 1,
+      clientId: aigul.id,
+      managerId: daniyar.id,
+      status: OrderStatus.NEW,
+      paymentStatus: PaymentStatus.UNPAID,
+      paidRatio: 0,
+      delivery: DeliveryMethod.PICKUP,
+      createdAt: daysAgo(0),
+      items: [item('GS-SHELF-01', 2), item('GS-ORG-01', 1)],
     },
-  })
-
-  await prisma.order.create({
-    data: {
-      clientId: ivan.id,
-      title: 'Барная стойка',
-      description: 'Стойка с полкой и подставкой для бокалов.',
-      status: Status.INSTALL,
-      price: 120000,
-      prepaid: 60000,
-      dueDate: daysFromNow(-1), // срок сдачи просрочен
+    {
+      n: 2,
+      clientId: komfort.id,
+      managerId: asel.id,
+      status: OrderStatus.INVOICED,
+      paymentStatus: PaymentStatus.PARTIAL,
+      paymentMethod: PaymentMethod.KASPI,
+      paidRatio: 0.5,
+      delivery: DeliveryMethod.DELIVERY,
+      deliveryAddress: 'г. Алматы, ул. Абая 15, офис 4',
+      createdAt: daysAgo(1),
+      items: [item('GS-CONS-01', 1), item('GS-MIRR-01', 2, 10)],
     },
-  })
-
-  await prisma.order.create({
-    data: {
-      clientId: stalDom.id,
-      title: 'Ограждение террасы',
-      description: 'Ограждение 12 м со стеклянными вставками.',
-      status: Status.DONE,
-      price: 55000,
-      prepaid: 40000, // остаток 15 000 — ждёт оплаты
-      measureDate: daysFromNow(-20),
-      dueDate: daysFromNow(-5),
+    {
+      n: 3,
+      clientId: danara.id,
+      managerId: daniyar.id,
+      status: OrderStatus.PAID,
+      paymentStatus: PaymentStatus.PAID,
+      paymentMethod: PaymentMethod.KASPI,
+      paidRatio: 1,
+      delivery: DeliveryMethod.PICKUP,
+      createdAt: daysAgo(2),
+      items: [item('GS-PLANT-01', 3), item('GS-BATH-01', 2)],
     },
-  })
+    {
+      n: 4,
+      clientId: aigul.id,
+      managerId: timur.id,
+      status: OrderStatus.SHIPPED,
+      paymentStatus: PaymentStatus.PAID,
+      paymentMethod: PaymentMethod.CARD,
+      paidRatio: 1,
+      delivery: DeliveryMethod.DELIVERY,
+      deliveryAddress: 'г. Астана, пр. Мангилик Ел 20',
+      trackNumber: 'KZ123456789',
+      shipped: true,
+      createdAt: daysAgo(4),
+      items: [item('GS-SIDE-01', 1), item('GS-ETAG-01', 1)],
+    },
+    {
+      n: 5,
+      clientId: nurlan.id,
+      managerId: asel.id,
+      status: OrderStatus.COMPLETED,
+      paymentStatus: PaymentStatus.PAID,
+      paymentMethod: PaymentMethod.CASH,
+      paidRatio: 1,
+      delivery: DeliveryMethod.PICKUP,
+      shipped: true,
+      createdAt: daysAgo(10),
+      items: [item('GS-KITCH-01', 1), item('GS-OTH-01', 2)],
+    },
+    {
+      n: 6,
+      clientId: komfort.id,
+      managerId: daniyar.id,
+      status: OrderStatus.RETURN,
+      paymentStatus: PaymentStatus.REFUNDED,
+      paymentMethod: PaymentMethod.KASPI,
+      paidRatio: 0,
+      delivery: DeliveryMethod.DELIVERY,
+      deliveryAddress: 'г. Алматы, мкр. Самал-2, 33',
+      createdAt: daysAgo(15),
+      items: [item('GS-SHELF-02', 1)],
+    },
+  ]
 
-  console.log('Seed завершён: 3 клиента, 5 заказов.')
+  for (const o of orders) {
+    const total = totalSum(o.items)
+    await prisma.order.create({
+      data: {
+        number: orderNumber(o.n),
+        clientId: o.clientId,
+        managerId: o.managerId,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        paymentMethod: o.paymentMethod,
+        paid: Math.round(total * o.paidRatio),
+        deliveryMethod: o.delivery,
+        deliveryAddress: o.deliveryAddress,
+        trackNumber: o.trackNumber,
+        stockDeductedAt: o.shipped ? o.createdAt : null,
+        createdAt: o.createdAt,
+        items: {
+          create: o.items.map((i) => ({
+            productId: i.productId,
+            sku: i.sku,
+            name: i.name,
+            unitPrice: i.unitPrice,
+            unitCost: i.unitCost,
+            qty: i.qty,
+            discountType: i.discountType,
+            discountValue: i.discountValue,
+          })),
+        },
+      },
+    })
+
+    // отгруженные/завершённые заказы списывают склад
+    if (o.shipped) {
+      for (const i of o.items) {
+        await prisma.product.update({
+          where: { id: i.productId },
+          data: { stock: { decrement: i.qty } },
+        })
+      }
+    }
+  }
+
+  console.log('Seed завершён: 3 менеджера, 4 клиента, 12 товаров, 6 сделок.')
 }
 
 main()
