@@ -1,5 +1,9 @@
 // Готовит логотип SAKHANOV: вырезает монограмму из logo.png и собирает
 // PWA-иконки (монограмма на светлом фоне) + знак mark.png для интерфейса.
+//
+// ВНИМАНИЕ: sharp намеренно НЕ в зависимостях проекта (ломал сборку на Vercel).
+// Перед запуском скрипта установите его локально:  npm i sharp
+// затем:  node scripts/gen-icons.mjs   (и удалите sharp обратно: npm remove sharp)
 import sharp from 'sharp'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
