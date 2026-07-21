@@ -3,6 +3,7 @@
 import { useFormState } from 'react-dom'
 import { login, type LoginState } from '@/actions/auth'
 import { SubmitButton } from '@/components/SubmitButton'
+import { SahanovLogo } from '@/components/SahanovLogo'
 
 const initialState: LoginState = {}
 
@@ -13,11 +14,11 @@ export default function LoginPage() {
     <main className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-lg font-bold text-white">
-            GS
-          </div>
-          <h1 className="text-2xl font-bold">Glint &amp; Steel</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Вход для менеджеров</p>
+          <SahanovLogo className="mx-auto mb-4 h-20 w-20" />
+          <h1 className="text-2xl font-bold tracking-[0.25em]">SAKHANOV</h1>
+          <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">
+            Premium Metal Works
+          </p>
         </div>
 
         <form action={formAction} className="space-y-4">

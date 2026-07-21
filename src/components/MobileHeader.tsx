@@ -1,14 +1,13 @@
 import Link from 'next/link'
+import { SahanovLogo } from './SahanovLogo'
 
 export function MobileHeader({ managerName }: { managerName: string }) {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur md:hidden dark:border-gray-800 dark:bg-gray-950/90">
-      <span className="flex items-center gap-2 font-bold">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs text-white">
-          GS
-        </span>
-        Glint &amp; Steel
-      </span>
+      <Link href="/" className="flex items-center gap-2 font-bold tracking-wide">
+        <SahanovLogo className="h-8 w-8" />
+        SAKHANOV
+      </Link>
       <Link
         href="/account"
         className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300"

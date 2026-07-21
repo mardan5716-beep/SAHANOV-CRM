@@ -2,13 +2,13 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Glint & Steel CRM',
-  description: 'CRM для производства и продажи аксессуаров из нержавеющей стали',
+  title: 'SAKHANOV CRM',
+  description: 'SAKHANOV Premium Metal Works — CRM для изделий из нержавеющей стали',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
-    title: 'Glint & Steel',
+    statusBarStyle: 'black-translucent',
+    title: 'SAKHANOV',
   },
   icons: {
     icon: '/icon-192.png',

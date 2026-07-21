@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/actions/auth'
 import { NAV_ITEMS, isNavActive } from './nav'
+import { SahanovLogo } from './SahanovLogo'
 
 export function TopNav({
   isAdmin,
@@ -18,12 +19,10 @@ export function TopNav({
     <header className="sticky top-0 z-20 hidden border-b border-gray-200 bg-white/90 backdrop-blur md:block dark:border-gray-800 dark:bg-gray-950/90">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-1">
-          <span className="mr-4 flex items-center gap-2 font-bold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs text-white">
-              GS
-            </span>
-            Glint &amp; Steel
-          </span>
+          <Link href="/" className="mr-4 flex items-center gap-2 font-bold tracking-wide">
+            <SahanovLogo className="h-7 w-7" />
+            SAKHANOV
+          </Link>
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const active = isNavActive(href, pathname)
             return (
