@@ -55,13 +55,13 @@ async function main() {
   const passwordHash = await hashPassword(DEFAULT_PASSWORD)
   const [daniyar, asel, timur] = await Promise.all([
     prisma.manager.create({
-      data: { name: 'Данияр', email: 'admin@glint.kz', passwordHash, isAdmin: true },
+      data: { name: 'Данияр', email: 'admin@sahanov.kz', passwordHash, isAdmin: true },
     }),
     prisma.manager.create({
-      data: { name: 'Асель', email: 'asel@glint.kz', passwordHash, isAdmin: false },
+      data: { name: 'Асель', email: 'asel@sahanov.kz', passwordHash, isAdmin: false },
     }),
     prisma.manager.create({
-      data: { name: 'Тимур', email: 'timur@glint.kz', passwordHash, isAdmin: false },
+      data: { name: 'Тимур', email: 'timur@sahanov.kz', passwordHash, isAdmin: false },
     }),
   ])
 
@@ -283,7 +283,7 @@ async function main() {
   })
 
   console.log('Seed завершён: 3 менеджера, 4 клиента, 12 товаров, 6 сделок, 3 напоминания.')
-  console.log('Вход админа: admin@glint.kz / changeme (смените пароль!)')
+  console.log('Вход админа: admin@sahanov.kz / changeme (смените пароль!)')
 }
 
 main()
