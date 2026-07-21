@@ -17,11 +17,11 @@ export function TopNav({
 
   return (
     <header className="sticky top-0 z-20 hidden border-b border-gray-200 bg-white/90 backdrop-blur md:block dark:border-gray-800 dark:bg-gray-950/90">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3">
         <div className="flex items-center gap-1">
-          <Link href="/" className="mr-4 flex items-center gap-2 font-bold tracking-wide">
+          <Link href="/" className="mr-3 flex shrink-0 items-center gap-2 font-bold">
             <SahanovLogo className="h-7 w-7" />
-            SAKHANOV
+            <span className="hidden lg:inline">SAKHANOV</span>
           </Link>
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const active = isNavActive(href, pathname)
@@ -29,7 +29,7 @@ export function TopNav({
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
                   active
                     ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
                     : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
@@ -41,11 +41,11 @@ export function TopNav({
             )
           })}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {isAdmin && (
             <Link
               href="/managers"
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+              className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
                 isNavActive('/managers', pathname)
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
                   : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
