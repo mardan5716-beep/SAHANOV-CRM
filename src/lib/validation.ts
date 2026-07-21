@@ -169,6 +169,24 @@ export function parseManager(formData: FormData) {
   })
 }
 
+// ─── Напоминание ────────────────────────────────────────────────────────────
+
+export const reminderSchema = z.object({
+  dueDate: z.preprocess((v) => {
+    if (v === null || v === undefined || v === '') return undefined
+    if (v instanceof Date) return v
+    return new Date(String(v))
+  }, z.date({ invalid_type_error: 'Укажите дату', required_error: 'Укажите дату' })),
+  note: optionalString,
+})
+
+export function parseReminder(formData: FormData) {
+  return reminderSchema.safeParse({
+    dueDate: formData.get('dueDate'),
+    note: formData.get('note'),
+  })
+}
+
 // ─── Смена пароля ───────────────────────────────────────────────────────────
 
 export const passwordChangeSchema = z

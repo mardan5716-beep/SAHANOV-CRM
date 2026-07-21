@@ -7,6 +7,7 @@ import {
   margin,
   type CalcItem,
 } from '@/lib/order-calc'
+import { isReminderDue } from '@/lib/reminder-dates'
 
 type ItemRow = {
   qty: number
@@ -74,5 +75,21 @@ export async function getDashboard() {
 
   const recentOrders = orders.slice(0, 8)
 
-  return { activeCount, totalDue, monthRevenue, monthMargin, lowStock, recentOrders }
+  // Напоминания «связаться»: срок сегодня или раньше, не выполнены, клиент активен.
+  const allReminders = await prisma.reminder.findMany({
+    where: { doneAt: null, deletedAt: null, client: { deletedAt: null } },
+    include: { client: true },
+    orderBy: { dueDate: 'asc' },
+  })
+  const dueReminders = allReminders.filter((r) => isReminderDue(r.dueDate, now))
+
+  return {
+    activeCount,
+    totalDue,
+    monthRevenue,
+    monthMargin,
+    lowStock,
+    recentOrders,
+    dueReminders,
+  }
 }

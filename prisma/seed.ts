@@ -273,7 +273,16 @@ async function main() {
     }
   }
 
-  console.log('Seed завершён: 3 менеджера, 4 клиента, 12 товаров, 6 сделок.')
+  // Напоминания «связаться»
+  await prisma.reminder.createMany({
+    data: [
+      { clientId: aigul.id, dueDate: daysAgo(0), note: 'Обсудить повторный заказ полок' },
+      { clientId: danara.id, dueDate: daysAgo(2), note: 'Перезвонить по этажерке' },
+      { clientId: komfort.id, dueDate: daysAgo(-25), note: 'Спишемся через месяц по объекту' },
+    ],
+  })
+
+  console.log('Seed завершён: 3 менеджера, 4 клиента, 12 товаров, 6 сделок, 3 напоминания.')
   console.log('Вход админа: admin@glint.kz / changeme (смените пароль!)')
 }
 

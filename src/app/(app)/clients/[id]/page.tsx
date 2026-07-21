@@ -2,8 +2,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { deleteClient } from '@/actions/clients'
+import { completeReminder, deleteReminder } from '@/actions/reminders'
 import { OrderCard } from '@/components/OrderCard'
+import { ReminderForm } from '@/components/ReminderForm'
 import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton'
+import { formatDate } from '@/lib/format'
+import { isReminderOverdue } from '@/lib/reminder-dates'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,9 +20,15 @@ export default async function ClientPage({ params }: { params: { id: string } })
         include: { client: true, items: true },
         orderBy: { createdAt: 'desc' },
       },
+      reminders: {
+        where: { deletedAt: null, doneAt: null },
+        orderBy: { dueDate: 'asc' },
+      },
     },
   })
   if (!client) notFound()
+
+  const now = new Date()
 
   return (
     <div className="space-y-6">
@@ -46,6 +56,53 @@ export default async function ClientPage({ params }: { params: { id: string } })
         <Row label="Компания" value={client.company} />
         <Row label="Источник" value={client.source} />
       </dl>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">Напоминания связаться</h2>
+        {client.reminders.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {client.reminders.map((r) => {
+              const overdue = isReminderOverdue(r.dueDate, now)
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <div className="min-w-0">
+                    <div className={`text-sm font-medium ${overdue ? 'text-red-600 dark:text-red-400' : ''}`}>
+                      {formatDate(r.dueDate)}
+                      {overdue && ' · просрочено'}
+                    </div>
+                    {r.note && (
+                      <div className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">{r.note}</div>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <form action={completeReminder.bind(null, r.id)}>
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition active:scale-[0.98]"
+                      >
+                        Выполнено
+                      </button>
+                    </form>
+                    <form action={deleteReminder.bind(null, r.id)}>
+                      <button
+                        type="submit"
+                        className="rounded-lg px-2 py-1.5 text-sm text-gray-400 transition hover:text-red-500"
+                        aria-label="Удалить напоминание"
+                      >
+                        ✕
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <ReminderForm clientId={client.id} />
+      </section>
 
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">

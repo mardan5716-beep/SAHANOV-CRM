@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { getDashboard } from '@/lib/dashboard'
 import { getCurrentManager } from '@/lib/session'
-import { formatMoney } from '@/lib/format'
+import { formatMoney, formatDate } from '@/lib/format'
+import { isReminderOverdue } from '@/lib/reminder-dates'
+import { completeReminder } from '@/actions/reminders'
 import { OrderCard } from '@/components/OrderCard'
 import { categoryLabel } from '@/lib/enums'
 
@@ -10,7 +12,8 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const manager = await getCurrentManager()
   const isAdmin = manager?.isAdmin ?? false
-  const { activeCount, totalDue, monthRevenue, monthMargin, lowStock, recentOrders } =
+  const now = new Date()
+  const { activeCount, totalDue, monthRevenue, monthMargin, lowStock, recentOrders, dueReminders } =
     await getDashboard()
 
   return (
@@ -27,6 +30,45 @@ export default async function DashboardPage() {
           </>
         )}
       </div>
+
+      {dueReminders.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Связаться</h2>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+              {dueReminders.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {dueReminders.map((r) => {
+              const overdue = isReminderOverdue(r.dueDate, now)
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <Link href={`/clients/${r.clientId}`} className="min-w-0 flex-1">
+                    <div className="truncate font-semibold">{r.client.name}</div>
+                    <div className={`text-sm ${overdue ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {formatDate(r.dueDate)}
+                      {overdue && ' · просрочено'}
+                      {r.note ? ` · ${r.note}` : ''}
+                    </div>
+                  </Link>
+                  <form action={completeReminder.bind(null, r.id)} className="shrink-0">
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition active:scale-[0.98]"
+                    >
+                      Готово
+                    </button>
+                  </form>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="mb-2 flex items-center gap-2">

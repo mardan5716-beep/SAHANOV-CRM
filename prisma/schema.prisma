@@ -84,8 +84,24 @@ model Client {
   createdAt DateTime  @default(now())
   deletedAt DateTime?
 
-  orders Order[]
+  orders    Order[]
+  reminders Reminder[]
 
+  @@index([deletedAt])
+}
+
+model Reminder {
+  id        String    @id @default(cuid())
+  clientId  String
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  dueDate   DateTime
+  note      String?
+  doneAt    DateTime?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([clientId])
+  @@index([dueDate])
   @@index([deletedAt])
 }
 
