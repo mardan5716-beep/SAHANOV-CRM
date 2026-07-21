@@ -61,13 +61,13 @@ describe('managerSchema', () => {
   it('валидные данные → ок; email в нижний регистр, isAdmin=true', () => {
     const r = managerSchema.safeParse({
       name: 'Данияр',
-      email: 'Admin@Sahanov.KZ',
+      email: 'Admin@Sakhanov.KZ',
       password: 'secret1',
       isAdmin: 'on',
     })
     expect(r.success).toBe(true)
     if (r.success) {
-      expect(r.data.email).toBe('admin@sahanov.kz')
+      expect(r.data.email).toBe('admin@sakhanov.kz')
       expect(r.data.isAdmin).toBe(true)
     }
   })
