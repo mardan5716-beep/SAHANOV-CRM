@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
-  title: 'SAKHANOV CRM',
+  title: 'SAKHANOV · CRM',
   description: 'SAKHANOV Premium Metal Works — CRM для изделий из нержавеющей стали',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
